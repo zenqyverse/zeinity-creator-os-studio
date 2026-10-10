@@ -26,6 +26,16 @@ import {
   INITIAL_SCRIPT_VERSIONS,
 } from './mock-data';
 import { supabase, isSupabaseConfigured } from './supabase';
+import { diagnosticService } from './diagnostic-service';
+
+export interface OfflineMutation {
+  id: string;
+  table: string;
+  action: 'upsert' | 'delete';
+  payload?: any;
+  recordId?: string;
+  timestamp: string;
+}
 
 export type AutosaveStatus = 'Tersimpan' | 'Menyimpan...' | 'Gagal menyimpan';
 
@@ -72,6 +82,8 @@ class StudioStore {
   private presets: FilterPreset[] = [];
   private logs: ActivityLog[] = [];
   private scriptVersions: ScriptVersion[] = [];
+  private offlineQueue: OfflineMutation[] = [];
+  private isOnline: boolean = true;
 
   private listeners: Set<StorageListener> = new Set();
   private autosaveStatus: AutosaveStatus = 'Tersimpan';
@@ -79,12 +91,44 @@ class StudioStore {
   private initialized: boolean = false;
 
   constructor() {
-    // Lazy initialize on first browser load or server fallback
     if (typeof window !== 'undefined') {
+      this.isOnline = navigator.onLine;
       this.loadFromLocalStorage();
+      this.setupNetworkListeners();
     } else {
       this.loadDefaults();
     }
+  }
+
+  private setupNetworkListeners() {
+    window.addEventListener('online', () => {
+      this.isOnline = true;
+      diagnosticService.info('storage', 'Koneksi internet pulih. Memulai sinkronisasi offline queue...', `Item di antrean: ${this.offlineQueue.length}`);
+      this.drainOfflineQueue();
+    });
+
+    window.addEventListener('offline', () => {
+      this.isOnline = false;
+      diagnosticService.warn('storage', 'Koneksi internet terputus. Beralih ke mode offline.', 'Semua perubahan akan disimpan secara lokal dan disinkronkan nanti.');
+    });
+  }
+
+  private async drainOfflineQueue() {
+    if (this.offlineQueue.length === 0 || !this.isOnline) return;
+
+    diagnosticService.info('storage', 'Memproses antrean mutasi offline...');
+    const queue = [...this.offlineQueue];
+    this.offlineQueue = [];
+    this.saveToLocalStorage('offline_queue', this.offlineQueue);
+
+    for (const mutation of queue) {
+      if (mutation.action === 'upsert') {
+        await this.persistToSupabase(mutation.table, mutation.payload, true);
+      } else if (mutation.action === 'delete' && mutation.recordId) {
+        await this.deleteFromSupabase(mutation.table, mutation.recordId, true);
+      }
+    }
+    diagnosticService.success('storage', 'Sinkronisasi offline queue selesai.');
   }
 
   private loadDefaults() {
@@ -154,6 +198,7 @@ class StudioStore {
         },
       ]);
       this.logs = dedupeArrayById(get('logs') || []);
+      this.offlineQueue = get('offline_queue') || [];
       this.initialized = true;
 
       // Heal / flush deduped collections to localStorage to clean up any duplicate IDs
@@ -801,7 +846,7 @@ class StudioStore {
   }
 
   // --- Undo System ---
-  public undoLastAction(): boolean {
+  public undo(): boolean {
     const item = this.undoStack.pop();
     if (!item) return false;
 
@@ -1078,32 +1123,109 @@ class StudioStore {
       }
 
       this.notify();
+
+      // Setup Realtime Sync only once
+      if (!(this as any)._realtimeInitialized) {
+        (this as any)._realtimeInitialized = true;
+        const channel = supabase.channel('schema-db-changes')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public' },
+            (payload) => {
+              console.log('[Supabase Realtime] Change received!', payload);
+              // Re-fetch everything on change for simplicity
+              this.initSupabaseSync();
+            }
+          )
+          .subscribe();
+      }
+
     } catch (err: any) {
       console.warn('[Supabase Hybrid Sync notice]:', err?.message || err);
     }
   }
 
-  private async persistToSupabase(table: string, payload: any) {
-    if (!isSupabaseConfigured() || !supabase) return;
+  public async migrateLocalDataToSupabase(): Promise<void> {
+    if (!isSupabaseConfigured() || !supabase) {
+      diagnosticService.warn('storage', 'Supabase not configured. Cannot migrate data.');
+      return;
+    }
+
     try {
-      const { error } = await supabase.from(table).upsert(payload);
-      if (error) {
-        console.warn(`[Supabase Hybrid Adapter] Failed to upsert ${table}:`, error.message || error);
-      }
+      diagnosticService.info('storage', 'Starting migration to Supabase...');
+      // Upload arrays to supabase tables sequentially
+      if (this.contentItems.length > 0) await supabase.from('content_items').upsert(this.contentItems);
+      if (this.ideas.length > 0) await supabase.from('content_items').upsert(this.ideas);
+      if (this.sources.length > 0) await supabase.from('research_sources').upsert(this.sources);
+      if (this.storyboards.length > 0) await supabase.from('storyboard_scenes').upsert(this.storyboards);
+      if (this.checklists.length > 0) await supabase.from('production_checklists').upsert(this.checklists);
+      if (this.assets.length > 0) await supabase.from('media_assets').upsert(this.assets);
+      if (this.metrics.length > 0) await supabase.from('analytics_metrics').upsert(this.metrics);
+      if (this.trends.length > 0) await supabase.from('trend_signals').upsert(this.trends);
+      if (this.scriptVersions.length > 0) await supabase.from('script_versions').upsert(this.scriptVersions);
+      
+      diagnosticService.success('storage', 'Migration to Supabase completed successfully!');
     } catch (err: any) {
-      console.warn(`[Supabase Hybrid Adapter Exception] ${table}:`, err?.message || err);
+      diagnosticService.error('storage', 'Failed to migrate data to Supabase', err);
     }
   }
 
-  private async deleteFromSupabase(table: string, id: string) {
+
+  private async persistToSupabase(table: string, payload: any, isReplay = false) {
     if (!isSupabaseConfigured() || !supabase) return;
+    if (!this.isOnline) {
+      this.offlineQueue.push({ id: generateUniqueId('q'), table, action: 'upsert', payload, timestamp: new Date().toISOString() });
+      this.saveToLocalStorage('offline_queue', this.offlineQueue);
+      if (!isReplay) {
+        diagnosticService.info('storage', `Offline: Mutasi 'upsert' pada ${table} ditambahkan ke antrean.`);
+      }
+      return;
+    }
+    try {
+      const { error } = await supabase.from(table).upsert(payload);
+      if (error) {
+        throw error;
+      }
+    } catch (err: any) {
+      if (err?.message?.includes('fetch') || !navigator.onLine) {
+        this.isOnline = false;
+        this.offlineQueue.push({ id: generateUniqueId('q'), table, action: 'upsert', payload, timestamp: new Date().toISOString() });
+        this.saveToLocalStorage('offline_queue', this.offlineQueue);
+        if (!isReplay) {
+          diagnosticService.warn('storage', `Network error: Mutasi 'upsert' pada ${table} ditambahkan ke antrean.`);
+        }
+      } else {
+        diagnosticService.error('supabase', `Gagal menyimpan ke ${table}`, err);
+      }
+    }
+  }
+
+  private async deleteFromSupabase(table: string, id: string, isReplay = false) {
+    if (!isSupabaseConfigured() || !supabase) return;
+    if (!this.isOnline) {
+      this.offlineQueue.push({ id: generateUniqueId('q'), table, action: 'delete', recordId: id, timestamp: new Date().toISOString() });
+      this.saveToLocalStorage('offline_queue', this.offlineQueue);
+      if (!isReplay) {
+        diagnosticService.info('storage', `Offline: Mutasi 'delete' pada ${table} ditambahkan ke antrean.`);
+      }
+      return;
+    }
     try {
       const { error } = await supabase.from(table).delete().eq('id', id);
       if (error) {
-        console.warn(`[Supabase Hybrid Adapter] Failed to delete from ${table}:`, error.message || error);
+        throw error;
       }
     } catch (err: any) {
-      console.warn(`[Supabase Hybrid Adapter Exception] ${table}:`, err?.message || err);
+      if (err?.message?.includes('fetch') || !navigator.onLine) {
+        this.isOnline = false;
+        this.offlineQueue.push({ id: generateUniqueId('q'), table, action: 'delete', recordId: id, timestamp: new Date().toISOString() });
+        this.saveToLocalStorage('offline_queue', this.offlineQueue);
+        if (!isReplay) {
+          diagnosticService.warn('storage', `Network error: Mutasi 'delete' pada ${table} ditambahkan ke antrean.`);
+        }
+      } else {
+        diagnosticService.error('supabase', `Gagal menghapus dari ${table}`, err);
+      }
     }
   }
 
@@ -1126,3 +1248,4 @@ class StudioStore {
 
 // Singleton store instance
 export const studioStore = new StudioStore();
+export const migrateLocalDataToSupabase = () => studioStore.migrateLocalDataToSupabase();

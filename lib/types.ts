@@ -67,6 +67,11 @@ export interface ContentItem {
   publish_date?: string; // ISO string e.g. "2026-10-12T07:00:00+07:00"
   production_due?: string; // YYYY-MM-DD
   source_url?: string;
+  source?: 'telegram' | 'webhook' | 'manual' | 'radar';
+  viability_score?: number;
+  ai_recommended_pillar?: Pillar;
+  ai_recommended_format?: VideoFormat;
+  is_raw?: boolean;
   notes?: string;
   created_at: string;
   updated_at: string;

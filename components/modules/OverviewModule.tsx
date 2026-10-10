@@ -13,6 +13,7 @@ import {
   Plus,
   ShieldCheck,
   CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface OverviewModuleProps {
@@ -38,36 +39,92 @@ export function OverviewModule({
 
   return (
     <div className="space-y-6">
-      {/* Welcome Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-zpanel via-zpanel-2 to-zpanel border border-zline">
-        <div>
-          <div className="text-[11px] font-bold text-zcyan uppercase tracking-widest">
-            ZEINITY CREATOR OPERATING SYSTEM
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-zink mt-1">
-            Good afternoon, Zeinity Team
-          </h1>
-          <p className="text-xs sm:text-sm text-zmuted mt-1.5 max-w-xl">
-            Pusat komando produksi YouTube Shorts berstandar editorial terverifikasi. Ritme rilis: 3 Shorts per minggu (Senin, Kamis, Minggu pukul 07:00 WIB).
-          </p>
+      {/* Welcome Banner with Channel Artwork */}
+      <div className="relative overflow-hidden rounded-2xl border border-zline/80 bg-zpanel shadow-xl">
+        {/* Banner Hero Image */}
+        <div className="relative h-32 sm:h-44 w-full overflow-hidden bg-zinc-950">
+          <img
+            src="/banner.png"
+            alt="Zeinity Channel Banner"
+            className="w-full h-full object-cover object-center opacity-90 transition-transform duration-700 hover:scale-[1.01]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-zpanel via-zpanel/50 to-transparent" />
         </div>
-        <div className="flex items-center gap-2 self-start sm:self-center">
-          <button
-            onClick={onCreateContent}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zaccent hover:bg-zaccent-hover text-black font-bold text-xs shadow-lg shadow-zaccent/20 transition-all hover:scale-[1.02]"
-          >
-            <Plus className="w-4 h-4" />
-            + Konten Baru
-          </button>
-          <button
-            onClick={() => onNavigate('radar')}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zpanel-2 border border-zline text-zink hover:border-zcyan font-semibold text-xs transition-colors"
-          >
-            <Radio className="w-4 h-4 text-zcyan" />
-            Radar Tren
-          </button>
+
+        {/* Content Overlay */}
+        <div className="relative p-6 -mt-10 sm:-mt-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div className="flex items-start sm:items-end gap-4">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-zline shadow-2xl bg-zinc-900 shrink-0">
+              <img
+                src="/logo.png"
+                alt="Zeinity Avatar"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div>
+              <div className="text-[11px] font-bold text-zcyan uppercase tracking-widest flex items-center gap-2">
+                <span>ZEINITY CREATOR OPERATING SYSTEM</span>
+                <span className="px-2 py-0.5 rounded-full bg-zcyan/10 border border-zcyan/30 text-[9px] text-zcyan font-mono">@ZeinityShorts</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-zink mt-1">
+                Pusat Komando Produksi
+              </h1>
+              <p className="text-xs sm:text-sm text-zmuted mt-1 max-w-xl">
+                Produksi YouTube Shorts berstandar editorial terverifikasi. Ritme rilis: 3 Shorts per minggu (Senin, Kamis, Minggu pukul 07:00 WIB).
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-end">
+            <button
+              onClick={onCreateContent}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zaccent hover:bg-zaccent-hover text-black font-bold text-xs shadow-lg shadow-zaccent/20 transition-all hover:scale-[1.02]"
+            >
+              <Plus className="w-4 h-4" />
+              + Konten Baru
+            </button>
+            <button
+              onClick={() => onNavigate('radar')}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zpanel-2 border border-zline text-zink hover:border-zcyan font-semibold text-xs transition-colors"
+            >
+              <Radio className="w-4 h-4 text-zcyan" />
+              Radar Tren
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Daily Action Focus */}
+      {(() => {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const overdueItems = contentItems.filter((c) => c.status !== 'Terbit' && c.production_due && c.production_due < todayStr);
+        const now = new Date();
+        const next48h = new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString();
+        const urgentPublish = contentItems.find(
+          (c) => c.status !== 'Terbit' && c.status !== 'Terjadwal' && c.publish_date && c.publish_date < next48h
+        );
+
+        let criticalBanner = null;
+        if (overdueItems.length > 0) {
+          criticalBanner = `⚠️ ${overdueItems.length} video melewati tenggat produksi! Segera selesaikan: ${overdueItems.slice(0, 2).map((c) => c.title).join(', ')}${overdueItems.length > 2 ? '...' : ''}`;
+        } else if (urgentPublish) {
+          criticalBanner = `⚠️ Video untuk jadwal tayang terdekat ("${urgentPublish.title}") masih berstatus ${urgentPublish.status} - butuh diselesaikan hari ini!`;
+        }
+
+        if (!criticalBanner) return null;
+
+        return (
+          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+            <div className="mt-0.5">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-amber-500">Tugas Kritis Hari Ini</h3>
+              <p className="text-xs text-amber-400/90 mt-1">{criticalBanner}</p>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 4 Stat Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

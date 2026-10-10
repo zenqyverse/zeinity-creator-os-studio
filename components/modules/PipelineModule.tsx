@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ContentItem, EditorialStatus, Pillar, VideoFormat } from '../../lib/types';
 import { studioStore } from '../../lib/storage';
 import { useToast } from '../ToastContainer';
+import { scrollToStudioTop } from '../../lib/scroll-utils';
 import {
   LayoutList,
   Columns3,
@@ -16,6 +17,7 @@ import {
   FilePenLine,
   Clapperboard,
   Trash2,
+  Copy,
   ArrowUpDown,
   ChevronUp,
   ChevronDown,
@@ -51,6 +53,7 @@ export function PipelineModule({
   const [pillarFilter, setPillarFilter] = useState<string>('all');
   const [formatFilter, setFormatFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [visualFilter, setVisualFilter] = useState<string>('all');
 
   const [sortField, setSortField] = useState<'title' | 'format' | 'status' | 'production_due' | 'publish_date' | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -79,7 +82,8 @@ export function PipelineModule({
     const matchPillar = pillarFilter === 'all' || item.pillar === pillarFilter;
     const matchFormat = formatFilter === 'all' || item.format === formatFilter;
     const matchStatus = statusFilter === 'all' || item.status === statusFilter;
-    return matchSearch && matchPillar && matchFormat && matchStatus;
+    const matchVisual = visualFilter === 'all' || item.visual_readiness === visualFilter;
+    return matchSearch && matchPillar && matchFormat && matchStatus && matchVisual;
   });
 
   const sortedItems = [...filteredItems].sort((a, b) => {
@@ -121,6 +125,16 @@ export function PipelineModule({
     }
   };
 
+  const handleDuplicate = (item: ContentItem) => {
+    studioStore.saveContentItem({
+      ...item,
+      id: undefined,
+      title: `${item.title} (Copy)`,
+      status: 'Ide',
+    });
+    showToast(`Konten diduplikasi dari "${item.title}"`, 'success', true);
+  };
+
   const handleDelete = (item: ContentItem) => {
     if (confirm(`Hapus "${item.title}" dari pipeline?`)) {
       studioStore.deleteItem(item.id);
@@ -146,7 +160,10 @@ export function PipelineModule({
           {/* Toggle View Mode: Table (Default) vs Kanban */}
           <div className="flex items-center p-1 rounded-xl bg-zpanel-2 border border-zline">
             <button
-              onClick={() => setViewMode('table')}
+              onClick={() => {
+                setViewMode('table');
+                scrollToStudioTop(true);
+              }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
                 viewMode === 'table'
                   ? 'bg-zcyan text-black shadow-sm'
@@ -157,7 +174,10 @@ export function PipelineModule({
               Tabel
             </button>
             <button
-              onClick={() => setViewMode('kanban')}
+              onClick={() => {
+                setViewMode('kanban');
+                scrollToStudioTop(true);
+              }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
                 viewMode === 'kanban'
                   ? 'bg-zcyan text-black shadow-sm'
@@ -242,6 +262,21 @@ export function PipelineModule({
               ))}
             </select>
           </div>
+
+          {/* Visual Filter */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-zmuted text-[11px]">Visual:</span>
+            <select
+              value={visualFilter}
+              onChange={(e) => setVisualFilter(e.target.value)}
+              className="bg-zpanel-2 border border-zline rounded-lg px-2.5 py-1 text-zink text-xs outline-none"
+            >
+              <option value="all">Semua Visual</option>
+              <option value="Siap">Siap</option>
+              <option value="Perlu aset">Perlu aset</option>
+              <option value="Belum dicek">Belum dicek</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -303,6 +338,7 @@ export function PipelineModule({
                       )}
                     </div>
                   </th>
+                  <th className="py-3 px-3 font-bold">Kesiapan Visual</th>
                   <th
                     onClick={() => handleSort('production_due')}
                     className="py-3 px-3 font-bold cursor-pointer hover:text-zink transition-colors"
@@ -343,7 +379,7 @@ export function PipelineModule({
               <tbody className="divide-y divide-zline/40">
                 {sortedItems.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-zmuted">
+                    <td colSpan={7} className="py-12 text-center text-zmuted">
                       Tidak ada konten yang sesuai dengan filter.
                     </td>
                   </tr>
@@ -351,10 +387,17 @@ export function PipelineModule({
                   sortedItems
                     .filter((item, i, arr) => arr.findIndex((x) => x.id === item.id) === i)
                     .map((item, idx) => {
+                    const nowStr = new Date().toISOString();
                     const isOverdue =
                       item.production_due &&
                       item.production_due < todayStr &&
                       item.status !== 'Terbit';
+                    
+                    const isPublishWarning = 
+                      item.publish_date && 
+                      item.status !== 'Terbit' && 
+                      item.status !== 'Terjadwal' &&
+                      new Date(item.publish_date).getTime() - new Date().getTime() < 24 * 60 * 60 * 1000;
 
                     return (
                       <tr
@@ -379,6 +422,12 @@ export function PipelineModule({
                                 Overdue
                               </span>
                             )}
+                            {isPublishWarning && !isOverdue && (
+                              <span className="flex items-center gap-0.5 text-[10px] font-bold text-rose-400 bg-rose-500/10 px-1.5 py-0.2 rounded border border-rose-500/30">
+                                <AlertTriangle className="w-3 h-3" />
+                                {'< 24h'}
+                              </span>
+                            )}
                           </div>
                         </td>
 
@@ -394,6 +443,17 @@ export function PipelineModule({
                         <td className="py-3 px-3 whitespace-nowrap">
                           <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-zpanel-2 border border-zline text-zcyan">
                             {item.status}
+                          </span>
+                        </td>
+
+                        {/* Visual Readiness */}
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <span className={`px-2 py-1 rounded-md text-[10px] font-bold ${
+                            item.visual_readiness === 'Siap' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' :
+                            item.visual_readiness === 'Perlu aset' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' :
+                            'bg-zline/30 text-zmuted border border-zline/50'
+                          }`}>
+                            {item.visual_readiness || 'Belum dicek'}
                           </span>
                         </td>
 
@@ -414,7 +474,7 @@ export function PipelineModule({
                         {/* Publish Schedule (Separate from production due) */}
                         <td className="py-3 px-3 whitespace-nowrap text-zmuted">
                           {item.publish_date ? (
-                            <div className="text-zink font-medium">
+                            <div className="text-zink font-medium flex items-center gap-1.5">
                               {new Date(item.publish_date).toLocaleDateString('id-ID', {
                                 weekday: 'short',
                                 day: 'numeric',
@@ -452,6 +512,13 @@ export function PipelineModule({
                               title="Buka Safe Zone 9:16 & Storyboard"
                             >
                               <Clapperboard className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDuplicate(item)}
+                              className="p-1.5 rounded-lg bg-zpanel-2 hover:bg-zline/60 border border-zline text-zmuted hover:text-zink"
+                              title="Duplikat konten (Part 2)"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleDelete(item)}

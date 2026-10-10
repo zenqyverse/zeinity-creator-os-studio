@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Search, Plus, CheckCircle, RefreshCw, AlertCircle, Sun, Moon, Bell } from 'lucide-react';
+import { Search, Plus, CheckCircle, RefreshCw, AlertCircle, Sun, Moon, Bell, Terminal } from 'lucide-react';
 import { AutosaveStatus } from '../lib/storage';
 
 interface TopHeaderProps {
@@ -50,6 +50,15 @@ export function TopHeader({
           )}
           <span className="text-[11px] text-zmuted">{autosaveStatus}</span>
         </div>
+
+        {/* Terminal toggle */}
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('toggle-mac-terminal'))}
+          className="p-2 rounded-xl bg-zpanel-2 border border-zline/70 text-zmuted hover:text-zink transition-colors"
+          title="Buka Diagnostic Terminal (Ctrl+\`)"
+        >
+          <Terminal className="w-4 h-4" />
+        </button>
 
         {/* Theme toggle */}
         <button

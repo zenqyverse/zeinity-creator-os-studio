@@ -40,7 +40,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const handleUndo = async (id: string) => {
     try {
       const { studioStore } = await import('../lib/storage');
-      const ok = studioStore.undoLastAction();
+      const ok = studioStore.undo();
       setToasts((prev) => prev.filter((t) => t.id !== id));
       if (ok) {
         showToast('Aksi berhasil dibatalkan (Undo)', 'success');

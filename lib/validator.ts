@@ -64,9 +64,9 @@ export interface ScriptEconomyResult {
   totalWords: number;
   estimatedSeconds: number;
   wpm: number;
-  isWordCountSafe: boolean; // 90 - 140 words
-  isDurationSafe: boolean;  // <= 60 seconds
-  formatTargetSeconds: { min: number; max: number; label: string };
+  isWordCountSafe: boolean;
+  isDurationSafe: boolean;
+  formatTargetSeconds: { min: number; max: number; label: string; wordMin?: number; wordMax?: number };
   formatCompliance: 'Optimal' | 'Terlalu Singkat' | 'Terlalu Panjang';
   breakdown: {
     hookWords: number;
@@ -76,11 +76,11 @@ export interface ScriptEconomyResult {
   };
 }
 
-export const FORMAT_DURATION_RANGES: Record<VideoFormat, { min: number; max: number; label: string }> = {
-  'Flash News': { min: 20, max: 30, label: '20–30 detik' },
-  'Quick Breakdown': { min: 30, max: 45, label: '30–45 detik' },
-  'Actionable Tip': { min: 45, max: 60, label: '45–60 detik' },
-  'Myth Buster': { min: 30, max: 45, label: '30–45 detik' },
+export const FORMAT_DURATION_RANGES: Record<VideoFormat, { min: number; max: number; label: string; wordMin: number; wordMax: number }> = {
+  'Flash News': { min: 20, max: 30, label: '20–30 detik', wordMin: 50, wordMax: 75 },
+  'Quick Breakdown': { min: 30, max: 45, label: '30–45 detik', wordMin: 75, wordMax: 110 },
+  'Myth Buster': { min: 30, max: 45, label: '30–45 detik', wordMin: 75, wordMax: 110 },
+  'Actionable Tip': { min: 45, max: 60, label: '45–60 detik', wordMin: 110, wordMax: 140 },
 };
 
 export function calculateScriptEconomy(
@@ -102,15 +102,15 @@ export function calculateScriptEconomy(
   const wpm = Math.max(130, Math.min(160, targetWpm || 145));
   const estimatedSeconds = Math.round((totalWords / wpm) * 60 * 10) / 10;
 
-  const isWordCountSafe = totalWords >= 90 && totalWords <= 140;
+  const formatRange = FORMAT_DURATION_RANGES[format] || { min: 20, max: 60, label: '20–60 detik', wordMin: 90, wordMax: 140 };
+
+  const isWordCountSafe = totalWords >= formatRange.wordMin && totalWords <= formatRange.wordMax;
   const isDurationSafe = estimatedSeconds <= 60;
 
-  const formatRange = FORMAT_DURATION_RANGES[format] || { min: 20, max: 60, label: '20–60 detik' };
-
   let formatCompliance: 'Optimal' | 'Terlalu Singkat' | 'Terlalu Panjang' = 'Optimal';
-  if (estimatedSeconds < formatRange.min) {
+  if (totalWords < formatRange.wordMin) {
     formatCompliance = 'Terlalu Singkat';
-  } else if (estimatedSeconds > formatRange.max) {
+  } else if (totalWords > formatRange.wordMax) {
     formatCompliance = 'Terlalu Panjang';
   }
 

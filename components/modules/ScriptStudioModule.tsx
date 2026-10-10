@@ -365,7 +365,7 @@ export function ScriptStudioModule({
   };
 
   // AI Copilot Actions
-  const runAiTask = async (taskType: 'hook' | 'seamless_loop' | 'fact_check') => {
+  const runAiTask = async (taskType: 'hook' | 'seamless_loop' | 'fact_check' | 'tighten_script' | 'generate_titles') => {
     setIsAiLoading(true);
     setAiOutput(null);
     try {
@@ -375,11 +375,19 @@ export function ScriptStudioModule({
         hook,
         script_context: context,
         script_payoff: payoff,
+        script_ending: ending,
+        target_wpm: targetWpm,
         sources,
         contentItem: activeItem,
       });
       setAiOutput(res.text);
-      showToast(`AI: ${taskType === 'hook' ? '3 Alternatif Hook' : taskType === 'seamless_loop' ? 'Seamless Loop' : 'Audit Fakta'} selesai dieksekusi`, 'info');
+      let taskName = '';
+      if (taskType === 'hook') taskName = '3 Alternatif Hook';
+      else if (taskType === 'seamless_loop') taskName = 'Seamless Loop';
+      else if (taskType === 'fact_check') taskName = 'Audit Fakta';
+      else if (taskType === 'tighten_script') taskName = 'Pangkas Kata';
+      else if (taskType === 'generate_titles') taskName = 'Generate Judul';
+      showToast(`AI: ${taskName} selesai dieksekusi`, 'info');
     } catch {
       showToast('Gagal memproses permintaan AI Copilot', 'error');
     } finally {
@@ -520,9 +528,21 @@ export function ScriptStudioModule({
         <div className="lg:col-span-2 space-y-5">
           {/* Title Validator Section */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-zmuted uppercase tracking-wider">
-              Judul Shorts (Sekaligus Teks Layar Detik 0–3)
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-zmuted uppercase tracking-wider">
+                Judul Shorts (Sekaligus Teks Layar Detik 0–3)
+              </label>
+              <button
+                type="button"
+                onClick={() => runAiTask('generate_titles')}
+                disabled={isAiLoading}
+                className="flex items-center gap-1.5 px-2 py-1 rounded bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 font-bold text-[10px] transition-colors disabled:opacity-50"
+                title="Generate 3 Opsi Judul"
+              >
+                <FilePenLine className="w-3 h-3" />
+                Auto-Title
+              </button>
+            </div>
             <input
               type="text"
               value={title}
@@ -565,6 +585,17 @@ export function ScriptStudioModule({
               >
                 <Scissors className="w-3.5 h-3.5" />
                 Tempel & Auto-Split
+              </button>
+
+              <button
+                type="button"
+                onClick={() => runAiTask('tighten_script')}
+                disabled={isAiLoading}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-500 font-semibold text-xs transition-colors disabled:opacity-50"
+                title="Pangkas kata naskah agar sesuai budget"
+              >
+                <Scissors className="w-3.5 h-3.5" />
+                Pangkas Kata (AI)
               </button>
 
               <button
@@ -678,6 +709,15 @@ export function ScriptStudioModule({
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] text-zmuted">Menyambung ke kalimat awal atau ajakan coba</span>
                   <button
+                    onClick={() => runAiTask('seamless_loop')}
+                    disabled={isAiLoading}
+                    className="flex items-center gap-1 p-1 px-2 rounded bg-zpink/10 hover:bg-zpink/20 border border-zpink/30 text-zpink text-[10px] font-bold transition-colors disabled:opacity-50"
+                    title="Generate AI Seamless Loop"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Auto-Loop
+                  </button>
+                  <button
                     onClick={() => handleCopy(ending, 'ending')}
                     className="p-1 rounded text-zmuted hover:text-zink"
                     title="Salin penutup"
@@ -760,6 +800,29 @@ export function ScriptStudioModule({
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                   <span>Audit Klaim vs Bukti Riset</span>
+                </div>
+                {isAiLoading && <RefreshCw className="w-3.5 h-3.5 animate-spin text-zcyan" />}
+              </button>
+              <button
+                disabled={isAiLoading}
+                onClick={() => runAiTask('tighten_script')}
+                className="flex items-center justify-between p-2.5 rounded-xl bg-zpanel-2 hover:bg-zline/60 border border-zline text-xs font-semibold text-zink transition-colors disabled:opacity-50 text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <Scissors className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Pangkas Kata (Tighten Script)</span>
+                </div>
+                {isAiLoading && <RefreshCw className="w-3.5 h-3.5 animate-spin text-zcyan" />}
+              </button>
+
+              <button
+                disabled={isAiLoading}
+                onClick={() => runAiTask('generate_titles')}
+                className="flex items-center justify-between p-2.5 rounded-xl bg-zpanel-2 hover:bg-zline/60 border border-zline text-xs font-semibold text-zink transition-colors disabled:opacity-50 text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <FilePenLine className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <span>Generate 3 Opsi Judul</span>
                 </div>
                 {isAiLoading && <RefreshCw className="w-3.5 h-3.5 animate-spin text-zcyan" />}
               </button>

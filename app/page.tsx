@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { studioStore, AutosaveStatus } from '../lib/storage';
 import {
   ContentItem,
@@ -16,6 +16,8 @@ import { GlobalSearchModal } from '../components/GlobalSearchModal';
 import { DrawerModal } from '../components/DrawerModal';
 import { ContentForm, ResearchSourceForm, MediaAssetForm, MetricForm } from '../components/forms/StudioForms';
 import { useToast } from '../components/ToastContainer';
+import MacTerminalDock from '../components/MacTerminalDock';
+import { ChevronUp } from 'lucide-react';
 
 // Modules
 import { OverviewModule } from '../components/modules/OverviewModule';
@@ -52,6 +54,25 @@ export default function ZeinityStudioPage() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [drawerType, setDrawerType] = useState<'content' | 'idea' | 'source' | 'asset' | 'metric' | null>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
+
+  // Scroll management
+  const mainRef = useRef<HTMLElement>(null);
+  const [showScrollTopBtn, setShowScrollTopBtn] = useState(false);
+
+  // Smooth scroll helper
+  const scrollToTop = (smooth = true) => {
+    if (mainRef.current) {
+      mainRef.current.scrollTo({
+        top: 0,
+        behavior: smooth ? 'smooth' : 'auto',
+      });
+    }
+    try {
+      window.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' });
+    } catch {
+      // Fallback
+    }
+  };
 
   // Sync with StudioStore on mount and changes
   const syncFromStore = () => {
@@ -94,6 +115,45 @@ export default function ZeinityStudioPage() {
       document.documentElement.classList.add('light');
     }
   }, [isDarkMode]);
+
+  // Auto scroll to top on tab switch or selected content item change
+  useEffect(() => {
+    scrollToTop(true);
+  }, [currentTab, selectedItemId]);
+
+  // Auto scroll to top when a modal form/drawer finishes and closes
+  const prevDrawerTypeRef = useRef<typeof drawerType>(drawerType);
+  useEffect(() => {
+    if (prevDrawerTypeRef.current !== null && drawerType === null) {
+      scrollToTop(true);
+    }
+    prevDrawerTypeRef.current = drawerType;
+  }, [drawerType]);
+
+  // Monitor scroll on <main> container to toggle floating "Ke Atas" button
+  useEffect(() => {
+    const mainEl = mainRef.current;
+    if (!mainEl) return;
+
+    const handleScroll = () => {
+      setShowScrollTopBtn(mainEl.scrollTop > 240);
+    };
+
+    mainEl.addEventListener('scroll', handleScroll, { passive: true });
+    return () => mainEl.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Listen to custom global scroll-to-top event from anywhere in the app
+  useEffect(() => {
+    const handleScrollEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ smooth?: boolean }>;
+      const smooth = customEvent.detail?.smooth ?? true;
+      scrollToTop(smooth);
+    };
+
+    window.addEventListener('zeinity:scroll-to-top', handleScrollEvent);
+    return () => window.removeEventListener('zeinity:scroll-to-top', handleScrollEvent);
+  }, []);
 
   // Global Keyboard Shortcuts
   useEffect(() => {
@@ -237,7 +297,7 @@ export default function ZeinityStudioPage() {
         />
 
         {/* Scrollable Main Stage */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-8 max-w-7xl w-full mx-auto">
+        <main ref={mainRef} className="flex-1 overflow-y-auto p-4 sm:p-8 max-w-7xl w-full mx-auto scroll-smooth">
           {currentTab === 'overview' && (
             <OverviewModule
               contentItems={contentItems}
@@ -427,6 +487,23 @@ export default function ZeinityStudioPage() {
           />
         )}
       </DrawerModal>
+
+      {/* Floating Scroll-to-Top Button */}
+      {showScrollTopBtn && (
+        <button
+          onClick={() => scrollToTop(true)}
+          className="fixed bottom-6 right-6 z-40 px-3.5 py-2.5 rounded-full bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/80 text-zinc-200 hover:text-white shadow-xl shadow-black/50 backdrop-blur-md transition-all duration-300 transform hover:scale-105 flex items-center gap-2 group cursor-pointer"
+          title="Kembali ke atas"
+          aria-label="Kembali ke atas"
+        >
+          <ChevronUp className="w-4 h-4 text-zaccent group-hover:-translate-y-0.5 transition-transform" />
+          <span className="text-xs font-semibold pr-1 text-zinc-300 group-hover:text-white">
+            Ke Atas
+          </span>
+        </button>
+      )}
+
+      <MacTerminalDock />
     </div>
   );
 }

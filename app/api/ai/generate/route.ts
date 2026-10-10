@@ -39,6 +39,24 @@ Berdasarkan data performa dan eksperimen terkini:
 1. Identifikasi korelasi gaya teks visual di detik 0-3 terhadap lonjakan retensi awal.
 2. Analisis pola durasi dan retensi payoff di detik 11-45.
 3. Berikan 3 rekomendasi taktis yang dapat langsung diterapkan pada naskah Shorts berikutnya.`;
+    } else if (taskType === 'autonomous_research') {
+      userPrompt = `Lakukan riset otonom untuk topik/URL: "${context.url || context.headline || context.title}".
+Ekstrak kutipan verbatim penting, klasifikasikan status verifikasi (Terverifikasi, Perlu Konfirmasi, Kedaluwarsa, rumor flag), dan beri peringatan jika informasi lebih dari 6 bulan (stale).
+Hasilkan draf naskah 4 fase (Hook, Context, Payoff, Ending) yang mematuhi batas kata, serta 3 opsi judul pertanyaan (5-10 kata, berawalan Apa/Kenapa/Bagaimana) dan seamless loop ending.`;
+    } else if (taskType === 'tighten_script') {
+      userPrompt = `Pangkas kata-kata naskah ini agar sesuai budget durasi/kata tanpa kehilangan esensi teknis:
+Hook: "${context.hook || ''}"
+Context: "${context.script_context || ''}"
+Payoff: "${context.script_payoff || ''}"
+Ending: "${context.script_ending || ''}"
+WPM Target: ${context.target_wpm || 145}
+Total target budget adalah 90-140 kata.`;
+    } else if (taskType === 'generate_titles') {
+      userPrompt = `Buatkan 3 opsi judul video Shorts untuk topik: "${context.title || context.headline || ''}".
+Aturan Validator Judul:
+1. Menggunakan pola pertanyaan (berawalan Apa, Kenapa, atau Bagaimana).
+2. Terdiri dari 5 hingga 10 kata.
+3. Wajib diakhiri dengan tanda tanya (?).`;
     } else {
       userPrompt = `Bantu susun 3 sudut pandang (content angles) untuk topik tren: "${context.headline}". Format: Flash News, Quick Breakdown, dan Actionable Tip.`;
     }
@@ -59,9 +77,10 @@ Berdasarkan data performa dan eksperimen terkini:
         body: JSON.stringify({
           system_instruction: { parts: [{ text: defaultSys }] },
           contents: [{ parts: [{ text: userPrompt }] }],
+          tools: [{ googleSearch: {} }],
           generationConfig: {
             temperature: temperature ?? 0.7,
-            maxOutputTokens: 600,
+            maxOutputTokens: 800,
           },
         }),
         signal: AbortSignal.timeout(10000),

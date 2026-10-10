@@ -53,6 +53,44 @@ export async function POST() {
 }
 
 async function handleFetchYouTubeTrends() {
+  const apiKey = process.env.YOUTUBE_API_KEY;
+
+  if (apiKey) {
+    try {
+      const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&videoCategoryId=28&regionCode=ID&maxResults=10&key=${apiKey}`;
+      const res = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/json',
+        },
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.items && Array.isArray(data.items) && data.items.length > 0) {
+          const items: YouTubeTrendItem[] = data.items.map((item: any) => ({
+            title: item.snippet?.title || 'Untitled',
+            link: `https://www.youtube.com/watch?v=${item.id}`,
+            pubDate: item.snippet?.publishedAt || new Date().toISOString(),
+            description: item.snippet?.description?.slice(0, 300) || '',
+            author: item.snippet?.channelTitle || 'YouTube Creator',
+            videoId: item.id,
+          }));
+
+          return NextResponse.json({
+            ok: true,
+            source: 'youtube-api-v3',
+            isFallback: false,
+            count: items.length,
+            items,
+          });
+        }
+      }
+    } catch (e: any) {
+      console.warn('[YouTube API v3 Error, falling back]:', e.message);
+    }
+  }
+
   try {
     // Attempt live ingestion from YouTube Technology trending RSS or standard topic feed
     const youtubeFeedUrl = 'https://www.youtube.com/feeds/videos.xml?channel_id=UCBJycsmduvYEL83R_U4JriQ'; // e.g. MKBHD or official tech feed

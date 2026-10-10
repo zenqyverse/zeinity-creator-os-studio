@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ResearchSource, ContentItem, VerificationStatus } from '../../lib/types';
 import { studioStore } from '../../lib/storage';
+import { generateWithTaskRouter } from '../../lib/ai-service';
 import { useToast } from '../ToastContainer';
 import {
   ShieldCheck,
@@ -47,6 +48,16 @@ export function ResearchModule({
       studioStore.deleteSource(id);
       showToast(`Sumber "${title}" dihapus`, 'info');
     }
+  };
+
+  const handlePushToPayoff = (source: ResearchSource, linkedContent?: ContentItem) => {
+    if (!linkedContent || !source.evidence_quote) return;
+    const newPayoff = linkedContent.script_payoff ? linkedContent.script_payoff + '\n' + source.evidence_quote : source.evidence_quote;
+    studioStore.saveContentItem({
+      ...linkedContent,
+      script_payoff: newPayoff,
+    });
+    showToast('Kutipan berhasil ditambahkan ke tahap Payoff naskah', 'success');
   };
 
   const getStatusBadge = (status: VerificationStatus) => {
@@ -95,13 +106,82 @@ export function ResearchModule({
           </p>
         </div>
 
-        <button
-          onClick={() => onOpenSourceModal()}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02]"
-        >
-          <Plus className="w-4 h-4" />
-          + Tambah Sumber Riset
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={async () => {
+              const url = prompt('Masukkan Topik atau URL untuk Riset Otomatis (Grounding AI):');
+              if (url) {
+                showToast('Riset Otonom sedang berjalan. Harap tunggu...', 'info');
+                try {
+                  const res = await generateWithTaskRouter('autonomous_research', { url });
+                  
+                  // Extract 4-fase draft if available
+                  const text = res.text;
+                  const extract = (marker: string) => {
+                    const idx = text.toLowerCase().indexOf(marker.toLowerCase());
+                    if (idx === -1) return '';
+                    let endIdx = text.indexOf('\n', idx);
+                    if (endIdx === -1) endIdx = text.length;
+                    return text.substring(idx + marker.length, endIdx).replace(/^[:\-\s]+/, '').trim();
+                  };
+                  
+                  const hookText = extract('Hook') || 'Hook hasil riset...';
+                  const contextText = extract('Context') || 'Konteks hasil riset...';
+                  const payoffText = extract('Payoff') || 'Payoff hasil riset...';
+                  const endingText = extract('Ending') || 'Ending hasil riset...';
+
+                  // Add a new content draft
+                  const newContent = studioStore.saveContentItem({
+                    title: 'Draf Otonom: ' + (url.split('?')[0].split('/').pop() || url).substring(0, 30),
+                    pillar: 'AI & Technology',
+                    format: 'Quick Breakdown',
+                    status: 'Riset',
+                    priority: 'Sedang',
+                    visual_readiness: 'Belum dicek',
+                    source_url: url,
+                    script_hook: hookText,
+                    script_context: contextText,
+                    script_payoff: payoffText,
+                    script_ending: endingText,
+                    word_count: 80,
+                    duration_estimate: 35
+                  });
+
+                  // Add a new source from the AI result
+                  studioStore.saveSource({
+                    source_title: 'Riset Otonom: ' + url,
+                    source_url: url.startsWith('http') ? url : '',
+                    source_platform: 'Google Search / AI Grounding',
+                    claim: 'Riset otomatis: ' + url,
+                    evidence_quote: res.text.substring(0, 500) + '...',
+                    verification_status: 'Terverifikasi',
+                    source_checked_date: new Date().toISOString().slice(0, 10),
+                    content_id: newContent.id
+                  });
+                  
+                  showToast('Berhasil mendapatkan informasi dari AI Grounding dan membuat draf naskah', 'success');
+                  // Trigger a re-render by doing a minimal state update or relying on the parent to refresh if needed. 
+                  // Since ResearchModule is receiving sources from props, we might need a small trick to refresh or just wait for next update.
+                  // For now, reload window or rely on the toast.
+                  setTimeout(() => window.location.reload(), 1500);
+                } catch (err: any) {
+                  showToast('Gagal melakukan riset otonom: ' + err.message, 'error');
+                }
+              }
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zcyan hover:bg-zcyan-hover text-black font-bold text-xs shadow-md shadow-zcyan/20 transition-all hover:scale-[1.02]"
+          >
+            <Search className="w-4 h-4" />
+            Riset Otomatis AI (Grounding)
+          </button>
+          <button
+            onClick={() => onOpenSourceModal()}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02]"
+          >
+            <Plus className="w-4 h-4" />
+            + Tambah Sumber Riset
+          </button>
+        </div>
       </div>
 
       {/* Strict Guidelines Notice Banner */}
@@ -206,13 +286,24 @@ export function ResearchModule({
 
                   {/* Evidence Quote Box */}
                   {source.evidence_quote && (
-                    <div className="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-1 text-xs">
-                      <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">
-                        Kutipan Bukti Terverifikasi:
-                      </span>
-                      <blockquote className="text-emerald-200/90 italic leading-relaxed">
-                        &quot;{source.evidence_quote}&quot;
-                      </blockquote>
+                    <div className="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-2 text-xs flex flex-col">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">
+                          Kutipan Bukti Terverifikasi:
+                        </span>
+                        <blockquote className="text-emerald-200/90 italic leading-relaxed mt-1">
+                          &quot;{source.evidence_quote}&quot;
+                        </blockquote>
+                      </div>
+                      {linkedContent && (
+                        <button
+                          onClick={() => handlePushToPayoff(source, linkedContent)}
+                          className="self-start px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded text-[10px] flex flex-row items-center gap-1 transition-colors mt-2"
+                        >
+                          <FileText className="w-3 h-3" />
+                          Push ke Naskah Payoff
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -226,17 +317,25 @@ export function ResearchModule({
 
                 {/* Bottom Footer Details */}
                 <div className="pt-3 border-t border-zline/50 flex items-center justify-between text-[11px] text-zmuted">
-                  <div className="flex items-center gap-3">
-                    {source.source_checked_date && (
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3 text-zmuted" />
-                        Dicek: {source.source_checked_date}
-                      </span>
-                    )}
-                    {linkedContent && (
-                      <span className="truncate max-w-[120px] font-semibold text-zink">
-                        • {linkedContent.title}
-                      </span>
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-3">
+                      {source.source_checked_date && (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-zmuted" />
+                          Dicek: {source.source_checked_date}
+                        </span>
+                      )}
+                      {linkedContent && (
+                        <span className="truncate max-w-[120px] font-semibold text-zink">
+                          • {linkedContent.title}
+                        </span>
+                      )}
+                    </div>
+                    {(source.source_pub_date || source.source_checked_date) && (Date.now() - new Date(source.source_pub_date || source.source_checked_date || '').getTime() > 180 * 24 * 60 * 60 * 1000) && (
+                      <div className="flex items-center gap-1 text-amber-500 font-medium">
+                        <AlertTriangle className="w-3 h-3" />
+                        Peringatan: Fakta Kedaluwarsa ({'>'} 6 bulan)
+                      </div>
                     )}
                   </div>
 

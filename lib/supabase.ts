@@ -62,3 +62,32 @@ export async function safeSupabaseQuery<T>(
     return { data: null, error: err, offline: true };
   }
 }
+
+export async function uploadAssetToSupabase(file: File, path: string): Promise<string | null> {
+  if (!supabase || !isSupabaseConfigured()) {
+    console.warn('[Supabase Storage Warning]: Supabase not configured. Cannot upload.');
+    return null;
+  }
+  
+  try {
+    const { data, error } = await supabase.storage
+      .from('zeinity-media')
+      .upload(path, file, {
+        upsert: true
+      });
+
+    if (error) {
+      console.error('[Supabase Storage Error]:', error.message);
+      return null;
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('zeinity-media')
+      .getPublicUrl(path);
+
+    return publicUrlData.publicUrl;
+  } catch (err: any) {
+    console.error('[Supabase Storage Exception]:', err.message || err);
+    return null;
+  }
+}

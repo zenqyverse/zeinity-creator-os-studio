@@ -126,10 +126,45 @@ export function AnalyticsModule({
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Sync from YouTube Channel button */}
+          <button
+            disabled={isAiLoading}
+            onClick={async () => {
+              try {
+                setIsAiLoading(true);
+                showToast('Menyinkronkan metrik dari YouTube...', 'info');
+                const res = await fetch('/api/youtube/analytics', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ contentItems }),
+                });
+                const data = await res.json();
+                if (data.ok && data.metrics) {
+                  let savedCount = 0;
+                  for (const metric of data.metrics) {
+                    studioStore.saveMetric(metric);
+                    savedCount++;
+                  }
+                  showToast(`Berhasil menyinkronkan ${savedCount} video dari YouTube!`, 'success');
+                } else {
+                  showToast(data.error || 'Gagal menyinkronkan metrik', 'error');
+                }
+              } catch (err: any) {
+                showToast(`Gagal: ${err.message}`, 'error');
+              } finally {
+                setIsAiLoading(false);
+              }
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/40 text-xs font-semibold text-rose-400 cursor-pointer transition-colors disabled:opacity-50"
+          >
+            {isAiLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            <span>Sinkronkan dari YouTube Channel</span>
+          </button>
+
           {/* CSV file upload button */}
           <label className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zpanel-2 hover:bg-zline/60 border border-zline text-xs font-semibold text-zink cursor-pointer transition-colors">
             <Upload className="w-3.5 h-3.5 text-zaccent" />
-            <span>Import CSV YouTube</span>
+            <span>Import CSV</span>
             <input
               type="file"
               accept=".csv"
@@ -146,6 +181,7 @@ export function AnalyticsModule({
             + Input Metrik
           </button>
         </div>
+
       </div>
 
       {/* 2 Benchmark Scorecards */}
@@ -458,37 +494,47 @@ export function AnalyticsModule({
 
                     {/* Viewed % */}
                     <td className="py-3.5 px-3 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={`font-black text-sm ${
-                            passedViewed ? 'text-emerald-400' : 'text-amber-400'
-                          }`}
-                        >
-                          {m.stayed_to_watch}%
+                      <div className="flex flex-col items-start gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`font-black text-sm ${
+                              passedViewed ? 'text-emerald-400' : 'text-amber-400'
+                            }`}
+                          >
+                            {m.stayed_to_watch}%
+                          </span>
+                          {passedViewed ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          ) : (
+                            <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                          )}
+                        </div>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded border inline-block ${passedViewed ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}`}>
+                          {passedViewed ? 'Lolos Target Viewed (>=70%)' : 'Di Bawah Target'}
                         </span>
-                        {passedViewed ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                        ) : (
-                          <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
-                        )}
                       </div>
                     </td>
 
                     {/* APV % */}
                     <td className="py-3.5 px-3 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={`font-black text-sm ${
-                            passedApv ? 'text-zcyan' : 'text-amber-400'
-                          }`}
-                        >
-                          {m.apv}%
+                      <div className="flex flex-col items-start gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`font-black text-sm ${
+                              passedApv ? 'text-zcyan' : 'text-amber-400'
+                            }`}
+                          >
+                            {m.apv}%
+                          </span>
+                          {passedApv ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-zcyan" />
+                          ) : (
+                            <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                          )}
+                        </div>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded border inline-block ${passedApv ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}`}>
+                          {passedApv ? 'Lolos Target APV (90–110%)' : 'Di Bawah Target'}
                         </span>
-                        {passedApv ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-zcyan" />
-                        ) : (
-                          <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
-                        )}
                       </div>
                     </td>
 

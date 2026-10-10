@@ -95,7 +95,7 @@ export async function fetchProviderModels(provider: AiProvider, apiKey: string):
 }
 
 export async function generateWithTaskRouter(
-  taskType: 'hook' | 'angles' | 'seamless_loop' | 'fact_check' | 'retention_insight',
+  taskType: 'hook' | 'angles' | 'seamless_loop' | 'fact_check' | 'retention_insight' | 'autonomous_research' | 'tighten_script' | 'generate_titles',
   context: {
     title?: string;
     headline?: string;
@@ -104,6 +104,9 @@ export async function generateWithTaskRouter(
     hook?: string;
     script_context?: string;
     script_payoff?: string;
+    script_ending?: string;
+    target_wpm?: number;
+    url?: string;
     sources?: ResearchSource[];
     contentItem?: ContentItem;
   },
@@ -226,7 +229,7 @@ export async function generateWithTaskRouter(
 }
 
 export async function generateWithTaskRouterStream(
-  taskType: 'hook' | 'angles' | 'seamless_loop' | 'fact_check' | 'retention_insight',
+  taskType: 'hook' | 'angles' | 'seamless_loop' | 'fact_check' | 'retention_insight' | 'autonomous_research' | 'tighten_script' | 'generate_titles',
   context: any,
   onChunk: (accumulatedText: string) => void
 ): Promise<AiGenerateResult> {
@@ -300,6 +303,30 @@ Temuan Audit:
    • Judul: "Bagaimana Cara Mengaktifkan Fitur Baru Tersebut?"
    • Hook: "Tiga ketukan cepat untuk mencoba fitur ini sekarang juga."
    • Nilai: Langkah praktis yang langsung bisa dicoba.`;
+  } else if (taskType === 'autonomous_research') {
+    text = `HASIL RISET OTONOM (MOCK):
+Kutipan Verbatim: "Google baru saja merilis pembaruan algoritma offline..."
+Status: Terverifikasi. Fakta cukup segar.
+
+DRAF 4-FASE:
+Hook: "Benarkah AI di ponselmu diam-diam..."
+Context: "Sejak bulan lalu, fitur ini sudah aktif..."
+Payoff: "Cara mengeceknya cukup mudah, buka pengaturan..."
+Ending: "Pastikan fitur ini menyala, dan simpan video ini."
+
+OPSI JUDUL:
+1. Kenapa AI Ponsel Makin Pintar?
+2. Apa Rahasia Fitur Offline Ini?
+3. Bagaimana Cara Cek Update Terbaru?`;
+  } else if (taskType === 'tighten_script') {
+    text = `HOOK: "Cek HP kamu sekarang juga."
+CONTEXT: "Fitur baru ini bikin baterai awet."
+PAYOFF: "Buka pengaturan, cari menu privasi, lalu matikan opsi sinkronisasi otomatis."
+ENDING: "Simpan trik ini supaya tidak lupa."`;
+  } else if (taskType === 'generate_titles') {
+    text = `1. Apa Fitur Baru yang Resmi Dirilis?
+2. Kenapa Perubahan Ini Menguntungkan Pengguna?
+3. Bagaimana Cara Mengaktifkan Fitur Baru Tersebut?`;
   } else {
     text = `Evaluasi Retensi & Eksperimen:
 Target Viewed >= 70% dan APV 90–110% tercapai paling konsisten ketika teks overlay pada detik 0-3 diletakkan presisi di area aman tengah (60%) dengan font berbobot tebal dan warna kontras tinggi (kuning/cyan). Hindari menaruh teks di 15% area atas atau 25% area bawah antarmuka Shorts.`;
@@ -312,5 +339,36 @@ Target Viewed >= 70% dan APV 90–110% tercapai paling konsisten ketika teks ove
     provider,
     model,
     isMock: true,
+  };
+}
+
+export async function evaluateIdeaSuitability(
+  title: string,
+  notes?: string
+): Promise<{
+  viability_score: number;
+  ai_recommended_pillar: import('./types').Pillar;
+  ai_recommended_format: import('./types').VideoFormat;
+}> {
+  // Simple heuristic fallback offline logic for now
+  const text = (title + ' ' + (notes || '')).toLowerCase();
+  
+  let pillar: import('./types').Pillar = 'AI & Technology';
+  if (text.includes('game') || text.includes('esports')) pillar = 'Gaming & Digital Entertainment';
+  else if (text.includes('uang') || text.includes('ekonomi') || text.includes('crypto')) pillar = 'Digital Economy & Consumer Culture';
+  else if (text.includes('sosmed') || text.includes('tiktok') || text.includes('viral')) pillar = 'Internet & Social Media';
+  else if (text.includes('psikologi') || text.includes('perilaku')) pillar = 'Modern Life & Human Behavior';
+
+  let format: import('./types').VideoFormat = 'Quick Breakdown';
+  if (text.includes('news') || text.includes('baru') || text.includes('update')) format = 'Flash News';
+  else if (text.includes('tips') || text.includes('cara') || text.includes('tutorial')) format = 'Actionable Tip';
+  else if (text.includes('mitos') || text.includes('fakta') || text.includes('salah')) format = 'Myth Buster';
+
+  const viability_score = Math.floor(Math.random() * 41) + 60; // 60-100 score
+
+  return {
+    viability_score,
+    ai_recommended_pillar: pillar,
+    ai_recommended_format: format,
   };
 }

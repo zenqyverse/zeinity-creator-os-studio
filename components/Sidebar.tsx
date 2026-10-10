@@ -55,8 +55,12 @@ export function Sidebar({
       {/* Brand Header */}
       <div className="flex items-center justify-between p-4 border-b border-zline/60">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-zaccent via-[#8f82ff] to-zcyan flex items-center justify-center font-black text-black text-base shadow-lg shadow-zaccent/20 shrink-0">
-            Z
+          <div className="w-9 h-9 rounded-xl overflow-hidden border border-zline/60 bg-zinc-900 shadow-md shadow-zaccent/20 shrink-0 flex items-center justify-center">
+            <img
+              src="/logo.png"
+              alt="Zeinity Logo"
+              className="w-full h-full object-cover"
+            />
           </div>
           {!isCollapsed && (
             <div className="flex flex-col min-w-0">

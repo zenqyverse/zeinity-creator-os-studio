@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ContentItem,
   ResearchSource,
@@ -16,6 +16,7 @@ import {
 } from '../../lib/types';
 import { TitleValidatorBar } from '../TitleValidatorBar';
 import { validateTitle } from '../../lib/validator';
+import { studioStore } from '../../lib/storage';
 import {
   UploadCloud,
   CheckCircle2,
@@ -26,6 +27,32 @@ import {
   FileText,
   AlertTriangle,
 } from 'lucide-react';
+
+const STOP_WORDS = new Set([
+  'apa', 'apakah', 'siapa', 'kapan', 'di', 'mana', 'dimana', 'ke', 'dari', 
+  'kenapa', 'mengapa', 'bagaimana', 'bisa', 'atau', 'dan', 'yang', 'untuk', 
+  'dengan', 'dalam', 'pada', 'adalah', 'ini', 'itu', 'saja', 'cara'
+]);
+
+function calculateSimilarity(str1: string, str2: string) {
+  const s1 = str1.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w && !STOP_WORDS.has(w));
+  const s2 = str2.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w && !STOP_WORDS.has(w));
+  if (s1.length === 0 || s2.length === 0) return 0;
+  const set1 = new Set(s1);
+  const set2 = new Set(s2);
+  const intersection = new Set([...set1].filter(x => set2.has(x)));
+  const union = new Set([...set1, ...set2]);
+  return intersection.size / union.size;
+}
+
+function getNextDayOfWeek(dayOfWeek: number, timeStr: string) {
+  const date = new Date();
+  const currentDay = date.getDay();
+  let daysUntil = dayOfWeek - currentDay;
+  if (daysUntil <= 0) daysUntil += 7;
+  date.setDate(date.getDate() + daysUntil);
+  return `${date.toISOString().slice(0, 10)}T${timeStr}`;
+}
 
 // -------------------------------------------------------------
 // 1. CONTENT / IDEA FORM
@@ -50,7 +77,25 @@ export function ContentForm({ initialData = {}, type, onSubmit, onCancel }: Cont
   const [publishDate, setPublishDate] = useState(initialData.publish_date ? initialData.publish_date.slice(0, 16) : '');
   const [notes, setNotes] = useState(initialData.notes || '');
 
-  const titleValidation = validateTitle(title);
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (title.length > 10) {
+      const items = studioStore.getContentItems();
+      let foundDup = null;
+      for (const item of items) {
+        if (item.id === initialData.id) continue;
+        const sim = calculateSimilarity(title, item.title);
+        if (sim > 0.7) {
+          foundDup = item.title;
+          break;
+        }
+      }
+      setDuplicateWarning(foundDup);
+    } else {
+      setDuplicateWarning(null);
+    }
+  }, [title, initialData.id]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +116,11 @@ export function ContentForm({ initialData = {}, type, onSubmit, onCancel }: Cont
     });
   };
 
+  const handlePresetSchedule = (day: number) => {
+    // 1=Senin, 4=Kamis, 0=Minggu
+    setPublishDate(getNextDayOfWeek(day, '07:00'));
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4 text-xs">
       {/* Title */}
@@ -87,6 +137,15 @@ export function ContentForm({ initialData = {}, type, onSubmit, onCancel }: Cont
           className="w-full px-3.5 py-2.5 rounded-xl bg-zpanel-2 border border-zline text-zink text-xs font-bold outline-none focus:border-zcyan"
         />
         <TitleValidatorBar title={title} />
+        {duplicateWarning && (
+          <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2 mt-2">
+            <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5" />
+            <div>
+              <h3 className="font-bold text-amber-500">Peringatan Kanibalisasi Topik</h3>
+              <p className="text-xs text-amber-400/90">Judul ini mirip ({'>70%'}) dengan: "{duplicateWarning}"</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Pillar & Format */}
@@ -174,7 +233,7 @@ export function ContentForm({ initialData = {}, type, onSubmit, onCancel }: Cont
       {type === 'content' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           <div className="space-y-1">
-            <label className="font-semibold text-zmuted">Tenggat Produksi (Deadline Internal)</label>
+            <label className="font-semibold text-zmuted">Tenggat Produksi</label>
             <input
               type="date"
               value={productionDue}
@@ -184,13 +243,18 @@ export function ContentForm({ initialData = {}, type, onSubmit, onCancel }: Cont
           </div>
 
           <div className="space-y-1">
-            <label className="font-semibold text-zmuted">Jadwal Tayang (Sen/Kam/Min 07:00 WIB)</label>
+            <label className="font-semibold text-zmuted">Jadwal Tayang</label>
             <input
               type="datetime-local"
               value={publishDate}
               onChange={(e) => setPublishDate(e.target.value)}
               className="w-full px-3 py-2 rounded-xl bg-zpanel-2 border border-zline text-zink outline-none"
             />
+            <div className="flex gap-1.5 mt-1.5">
+              <button type="button" onClick={() => handlePresetSchedule(1)} className="px-2 py-1 bg-zpanel-2 border border-zline rounded text-[10px] font-bold text-zcyan hover:bg-zline/50">Senin 07:00</button>
+              <button type="button" onClick={() => handlePresetSchedule(4)} className="px-2 py-1 bg-zpanel-2 border border-zline rounded text-[10px] font-bold text-zcyan hover:bg-zline/50">Kamis 07:00</button>
+              <button type="button" onClick={() => handlePresetSchedule(0)} className="px-2 py-1 bg-zpanel-2 border border-zline rounded text-[10px] font-bold text-zcyan hover:bg-zline/50">Minggu 07:00</button>
+            </div>
           </div>
         </div>
       )}
@@ -283,6 +347,39 @@ export function ResearchSourceForm({
   const [contentId, setContentId] = useState(initialData.content_id || '');
   const [errorMsg, setErrorMsg] = useState('');
 
+  const [isScraping, setIsScraping] = useState(false);
+
+  const handleScrapeMetadata = async () => {
+    if (!url) {
+      setErrorMsg('Masukkan URL terlebih dahulu sebelum scrape.');
+      return;
+    }
+    setIsScraping(true);
+    try {
+      const res = await fetch('/api/research/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      if (!res.ok) throw new Error('Scraping failed');
+      const data = await res.json();
+      if (data.title) setTitle(data.title);
+      if (data.domain) setPlatform(data.domain);
+      if (data.publishedTime) {
+        // basic parse to YYYY-MM-DD
+        const d = new Date(data.publishedTime);
+        if (!isNaN(d.getTime())) {
+          setPubDate(d.toISOString().slice(0, 10));
+        }
+      }
+      if (data.textContent) setEvidenceQuote(data.textContent.substring(0, 300) + '...');
+    } catch (err: any) {
+      setErrorMsg('Gagal mengambil metadata: ' + err.message);
+    } finally {
+      setIsScraping(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -338,14 +435,24 @@ export function ResearchSourceForm({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
           <label className="font-semibold text-zmuted">URL Dokumen Resmi *</label>
-          <input
-            type="url"
-            required
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://..."
-            className="w-full px-3 py-2 rounded-xl bg-zpanel-2 border border-zline text-zink outline-none"
-          />
+          <div className="flex gap-2">
+            <input
+              type="url"
+              required
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://..."
+              className="flex-1 px-3 py-2 rounded-xl bg-zpanel-2 border border-zline text-zink outline-none"
+            />
+            <button
+              type="button"
+              onClick={handleScrapeMetadata}
+              disabled={isScraping}
+              className="px-3 py-2 bg-zcyan hover:bg-zcyan-hover text-black rounded-xl font-bold whitespace-nowrap disabled:opacity-50"
+            >
+              {isScraping ? 'Scraping...' : 'Scrape Metadata'}
+            </button>
+          </div>
         </div>
 
         <div className="space-y-1">
