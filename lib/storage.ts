@@ -1233,28 +1233,79 @@ class StudioStore {
     }
   }
 
-  public async migrateLocalDataToSupabase(): Promise<void> {
+  public async migrateLocalDataToSupabase(): Promise<{ success: boolean; totalUploaded: number; error?: string }> {
     if (!isSupabaseConfigured() || !supabase) {
-      diagnosticService.warn('storage', 'Supabase not configured. Cannot migrate data.');
-      return;
+      diagnosticService.warn('storage', 'Supabase belum dikonfigurasi. Kunci URL atau Anon Key masih kosong.');
+      return { success: false, totalUploaded: 0, error: 'Supabase belum dikonfigurasi' };
     }
 
     try {
-      diagnosticService.info('storage', 'Starting migration to Supabase...');
-      // Upload arrays to supabase tables sequentially
-      if (this.contentItems.length > 0) await supabase.from('content_items').upsert(this.contentItems);
-      if (this.ideas.length > 0) await supabase.from('content_items').upsert(this.ideas);
-      if (this.sources.length > 0) await supabase.from('research_sources').upsert(this.sources);
-      if (this.storyboards.length > 0) await supabase.from('storyboard_scenes').upsert(this.storyboards);
-      if (this.checklists.length > 0) await supabase.from('production_checklists').upsert(this.checklists);
-      if (this.assets.length > 0) await supabase.from('media_assets').upsert(this.assets);
-      if (this.metrics.length > 0) await supabase.from('analytics_metrics').upsert(this.metrics);
-      if (this.trends.length > 0) await supabase.from('trend_signals').upsert(this.trends);
-      if (this.scriptVersions.length > 0) await supabase.from('script_versions').upsert(this.scriptVersions);
-      
-      diagnosticService.success('storage', 'Migration to Supabase completed successfully!');
+      diagnosticService.info('storage', 'Memulai migrasi seluruh data lokal ke tabel Supabase...');
+      let total = 0;
+
+      if (this.contentItems.length > 0) {
+        const { error } = await supabase.from('content_items').upsert(this.contentItems);
+        if (error) throw new Error(`Tabel content_items: ${error.message}`);
+        total += this.contentItems.length;
+      }
+      if (this.ideas.length > 0) {
+        const { error } = await supabase.from('content_items').upsert(this.ideas);
+        if (error) throw new Error(`Tabel ideas (content_items): ${error.message}`);
+        total += this.ideas.length;
+      }
+      if (this.sources.length > 0) {
+        const { error } = await supabase.from('research_sources').upsert(this.sources);
+        if (error) throw new Error(`Tabel research_sources: ${error.message}`);
+        total += this.sources.length;
+      }
+      if (this.storyboards.length > 0) {
+        const { error } = await supabase.from('storyboard_scenes').upsert(this.storyboards);
+        if (error) throw new Error(`Tabel storyboard_scenes: ${error.message}`);
+        total += this.storyboards.length;
+      }
+      if (this.checklists.length > 0) {
+        const { error } = await supabase.from('production_checklists').upsert(this.checklists);
+        if (error) throw new Error(`Tabel production_checklists: ${error.message}`);
+        total += this.checklists.length;
+      }
+      if (this.assets.length > 0) {
+        const { error } = await supabase.from('media_assets').upsert(this.assets);
+        if (error) throw new Error(`Tabel media_assets: ${error.message}`);
+        total += this.assets.length;
+      }
+      if (this.metrics.length > 0) {
+        const { error } = await supabase.from('analytics_metrics').upsert(this.metrics);
+        if (error) throw new Error(`Tabel analytics_metrics: ${error.message}`);
+        total += this.metrics.length;
+      }
+      if (this.trends.length > 0) {
+        const { error } = await supabase.from('trend_signals').upsert(this.trends);
+        if (error) throw new Error(`Tabel trend_signals: ${error.message}`);
+        total += this.trends.length;
+      }
+      if (this.scriptVersions.length > 0) {
+        const { error } = await supabase.from('script_versions').upsert(this.scriptVersions);
+        if (error) throw new Error(`Tabel script_versions: ${error.message}`);
+        total += this.scriptVersions.length;
+      }
+
+      diagnosticService.success('storage', `Migrasi berhasil: ${total} entitas tersimpan di Cloud Supabase.`);
+      return { success: true, totalUploaded: total };
     } catch (err: any) {
-      diagnosticService.error('storage', 'Failed to migrate data to Supabase', err);
+      diagnosticService.error('storage', `Gagal migrasi ke Supabase: ${err?.message || err}`, err);
+      return { success: false, totalUploaded: 0, error: err?.message || String(err) };
+    }
+  }
+
+  public async syncWithSupabase(): Promise<{ success: boolean; message: string }> {
+    if (!isSupabaseConfigured() || !supabase) {
+      return { success: false, message: 'Supabase belum dikonfigurasi.' };
+    }
+    try {
+      await this.initSupabaseSync();
+      return { success: true, message: 'Sinkronisasi dua arah dengan Supabase berhasil.' };
+    } catch (err: any) {
+      return { success: false, message: err.message || 'Gagal sinkronisasi' };
     }
   }
 
@@ -1337,3 +1388,4 @@ class StudioStore {
 // Singleton store instance
 export const studioStore = new StudioStore();
 export const migrateLocalDataToSupabase = () => studioStore.migrateLocalDataToSupabase();
+export const syncWithSupabase = () => studioStore.syncWithSupabase();
