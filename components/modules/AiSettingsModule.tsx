@@ -135,6 +135,53 @@ export function AiSettingsModule({ configs, initialTab }: AiSettingsModuleProps)
     }
   };
 
+  // Polling states for localhost development
+  const [isPollingTg, setIsPollingTg] = useState(false);
+  const [autoPollTg, setAutoPollTg] = useState(false);
+  const [pollSuccessCount, setPollSuccessCount] = useState(0);
+
+  const handlePollTelegram = async (isSilent = false) => {
+    if (!tgToken.trim()) {
+      if (!isSilent) showToast('Masukkan Bot Token Telegram terlebih dahulu', 'error');
+      return;
+    }
+    setIsPollingTg(true);
+    try {
+      const res = await fetch('/api/telegram/poll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: tgToken.trim(),
+          owner_chat_id: tgOwnerChatId.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        if (data.processed_count > 0) {
+          showToast(`⚡ ${data.processed_count} ide baru dari chat Telegram berhasil diproses dan disimpan!`, 'success');
+          setPollSuccessCount((prev) => prev + data.processed_count);
+        } else if (!isSilent) {
+          showToast('Tidak ada pesan baru di chat bot Telegram.', 'info');
+        }
+      } else {
+        if (!isSilent) showToast(data.error || 'Gagal polling Telegram', 'error');
+      }
+    } catch (e: any) {
+      if (!isSilent) showToast(e.message || 'Gagal koneksi polling', 'error');
+    } finally {
+      setIsPollingTg(false);
+    }
+  };
+
+  // Auto-poll effect when autoPollTg is enabled
+  useEffect(() => {
+    if (!autoPollTg || !tgToken.trim()) return;
+    const interval = setInterval(() => {
+      handlePollTelegram(true);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [autoPollTg, tgToken, tgOwnerChatId]);
+
   const handleSetTgWebhook = async () => {
     if (!tgToken.trim()) {
       showToast('Masukkan Bot Token Telegram terlebih dahulu', 'error');
@@ -142,6 +189,11 @@ export function AiSettingsModule({ configs, initialTab }: AiSettingsModuleProps)
     }
     if (!tgWebhookUrl.trim()) {
       showToast('Masukkan URL Webhook publik terlebih dahulu', 'error');
+      return;
+    }
+    if (!tgWebhookUrl.trim().startsWith('https://')) {
+      showToast('Telegram API mewajibkan URL HTTPS publik! Gunakan Mode Polling di bawah untuk localhost.', 'error');
+      setTgStatusMessage('Peringatan: Telegram menolak URL non-HTTPS. Untuk localhost, gunakan "Mode Polling (Tarik Pesan)" di bawah.');
       return;
     }
     setTgLoading(true);
@@ -611,6 +663,18 @@ export function AiSettingsModule({ configs, initialTab }: AiSettingsModuleProps)
                 </button>
               </div>
 
+              {(!tgWebhookUrl.startsWith('https://') || tgWebhookUrl.includes('localhost')) && (
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1 text-[11px] text-zinc-300">
+                    <p className="font-semibold text-amber-400">Telegram API mewajibkan protokol HTTPS publik untuk Webhook.</p>
+                    <p className="leading-relaxed">
+                      Karena studio sedang berjalan di localhost (<code>{tgWebhookUrl}</code>), Telegram menolak pendaftaran webhook langsung ke alamat ini. <b>Gunakan "Mode Polling" di bawah</b> untuk langsung menerima chat tanpa perlu domain publik!
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <button
                   onClick={handleSetTgWebhook}
@@ -665,6 +729,79 @@ export function AiSettingsModule({ configs, initialTab }: AiSettingsModuleProps)
                   )}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Card 2: Localhost Polling Mode (No HTTPS / Domain Required) */}
+          <div className="p-6 rounded-2xl bg-zpanel border border-zline space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zline/60">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shrink-0">
+                  <RefreshCw className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-zink flex items-center gap-2">
+                    Mode Pengujian Localhost (Polling Tanpa HTTPS)
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-mono border border-amber-500/30">
+                      Rekomendasi Localhost
+                    </span>
+                  </h3>
+                  <p className="text-xs text-zmuted mt-0.5">
+                    Solusi instan untuk pengujian di komputer lokal. Mengambil pesan dari Telegram via getUpdates tanpa memerlukan pendaftaran webhook atau domain HTTPS publik.
+                  </p>
+                </div>
+              </div>
+
+              {/* Auto Poll Switch */}
+              <label className="flex items-center gap-2.5 cursor-pointer bg-zpanel-2 px-3.5 py-2 rounded-xl border border-zline hover:border-zcyan/50 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={autoPollTg}
+                  onChange={(e) => {
+                    setAutoPollTg(e.target.checked);
+                    if (e.target.checked) {
+                      showToast('Auto-Polling aktif: memeriksa chat Telegram tiap 4 detik', 'info');
+                    } else {
+                      showToast('Auto-Polling dinonaktifkan', 'info');
+                    }
+                  }}
+                  className="w-4 h-4 rounded accent-zcyan cursor-pointer"
+                />
+                <span className="text-xs font-semibold text-zink select-none">
+                  Auto-Polling (Tiap 4 Detik)
+                </span>
+              </label>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => handlePollTelegram(false)}
+                disabled={isPollingTg || !tgToken.trim()}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs shadow-md shadow-amber-500/20 transition-all hover:scale-[1.02] disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${isPollingTg ? 'animate-spin' : ''}`} />
+                {isPollingTg ? 'Sedang Memeriksa Chat...' : '⚡ Tarik Pesan Chat Telegram Sekarang'}
+              </button>
+
+              {pollSuccessCount > 0 && (
+                <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <CheckCircle2 className="w-4 h-4" />
+                  {pollSuccessCount} ide berhasil diserap dari chat!
+                </span>
+              )}
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-zpanel-2/60 border border-zline/60 text-xs text-zinc-300 space-y-1.5 leading-relaxed">
+              <div className="font-bold text-amber-400 flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4" />
+                Cara Langsung Menguji di Localhost:
+              </div>
+              <ol className="list-decimal list-inside space-y-1 text-[11px] text-zmuted">
+                <li>Buka aplikasi Telegram di HP Anda dan mulai chat dengan bot <code className="text-zcyan">@{tgBotInfo?.username || 'bot_anda'}</code>.</li>
+                <li>Ketik perintah <code className="text-amber-400 font-mono">/start</code> atau kirim ide: <code className="text-amber-400 font-mono">/idea Cara install AI lokal di laptop</code>.</li>
+                <li>Klik tombol kuning <b>"Tarik Pesan Chat Telegram Sekarang"</b> di atas (atau aktifkan checkbox Auto-Polling).</li>
+                <li>Ide akan otomatis dievaluasi oleh AI dan langsung masuk ke <b>Bank Ide (Inbox Ide Mentah)</b>, dan bot akan membalas chat Anda di Telegram!</li>
+              </ol>
             </div>
           </div>
 
