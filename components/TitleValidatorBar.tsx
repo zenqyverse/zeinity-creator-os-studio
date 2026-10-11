@@ -24,12 +24,16 @@ export function TitleValidatorBar({ title }: TitleValidatorBarProps) {
               : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
           }`}
         >
-          {result.isValid ? '✓ Standar Terpenuhi' : `${result.errors.length} Perlu Perbaikan`}
+          {result.isValid
+            ? result.suggestions.length > 0
+              ? '✓ Valid (Ada Saran)'
+              : '✓ Standar Terpenuhi'
+            : `${result.errors.length} Perlu Perbaikan`}
         </span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-        {/* Rule 1: Question word */}
+        {/* Rule 1: Question word (Non-blocking tip) */}
         <div
           className={`flex items-center gap-2 p-2 rounded-lg border ${
             result.formatPassed.startsWithQuestionWord
@@ -40,17 +44,17 @@ export function TitleValidatorBar({ title }: TitleValidatorBarProps) {
           {result.formatPassed.startsWithQuestionWord ? (
             <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
           ) : (
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <Lightbulb className="w-3.5 h-3.5 text-zmuted shrink-0" />
           )}
-          <span>Awalan: <strong>Apa / Kenapa / Bagaimana</strong></span>
+          <span>Awalan: <strong>Apa / Kenapa / Bagaimana</strong> <span className="text-[10px] text-zmuted/80">(Saran)</span></span>
         </div>
 
-        {/* Rule 2: 5-10 words */}
+        {/* Rule 2: 5-10 words (Strict blocking rule) */}
         <div
           className={`flex items-center gap-2 p-2 rounded-lg border ${
             result.formatPassed.validWordRange
               ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300'
-              : 'border-zline bg-zpanel-2/50 text-zmuted'
+              : 'border-amber-500/30 bg-amber-500/5 text-amber-300'
           }`}
         >
           {result.formatPassed.validWordRange ? (
@@ -61,7 +65,7 @@ export function TitleValidatorBar({ title }: TitleValidatorBarProps) {
           <span>Panjang: <strong>5–10 Kata</strong> ({result.wordCount} kata)</span>
         </div>
 
-        {/* Rule 3: Question mark */}
+        {/* Rule 3: Question mark (Non-blocking tip) */}
         <div
           className={`flex items-center gap-2 p-2 rounded-lg border ${
             result.formatPassed.endsWithQuestionMark
@@ -72,9 +76,9 @@ export function TitleValidatorBar({ title }: TitleValidatorBarProps) {
           {result.formatPassed.endsWithQuestionMark ? (
             <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
           ) : (
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <Lightbulb className="w-3.5 h-3.5 text-zmuted shrink-0" />
           )}
-          <span>Akhiran tanda tanya <strong>(&quot;?&quot;)</strong></span>
+          <span>Akhiran tanda tanya <strong>(&quot;?&quot;)</strong> <span className="text-[10px] text-zmuted/80">(Saran)</span></span>
         </div>
       </div>
 
@@ -86,12 +90,17 @@ export function TitleValidatorBar({ title }: TitleValidatorBarProps) {
               <span>{err}</span>
             </div>
           ))}
-          {result.suggestions.length > 0 && (
-            <div className="flex items-start gap-1.5 text-zcyan pt-1">
-              <Lightbulb className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-              <span>Saran: {result.suggestions[0]}</span>
+        </div>
+      )}
+
+      {result.suggestions.length > 0 && (
+        <div className="pt-1 text-xs space-y-1">
+          {result.suggestions.map((sug, i) => (
+            <div key={i} className="flex items-start gap-1.5 text-zcyan">
+              <Lightbulb className="w-3.5 h-3.5 shrink-0 mt-0.5 text-zcyan" />
+              <span>Saran: {sug}</span>
             </div>
-          )}
+          ))}
         </div>
       )}
     </div>

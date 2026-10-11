@@ -4,10 +4,12 @@
   "private": true,
   "scripts": {
     "clean": "node scripts/clean.mjs",
-    "dev": "next dev",
+    "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node scripts/test-phase5-verification.mjs",
+    "test:all": "node scripts/test-phase3-verification.mjs && node scripts/test-phase4-verification.mjs && node scripts/test-phase5-verification.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",

@@ -4,7 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { ContentItem, StoryboardScene } from '../../lib/types';
 import { studioStore } from '../../lib/storage';
 import { useToast } from '../ToastContainer';
-import { SafeZoneCanvas, ProjectedShotInfo } from '../SafeZoneCanvas';
+interface ProjectedShotInfo {
+  shotIndex: number;
+  timeRange: string;
+  onScreenText: string;
+  narrationText?: string;
+  visualDirection?: string;
+}
 import {
   Clapperboard,
   CheckSquare,
@@ -278,12 +284,19 @@ export function ProductionStudioModule({
             </div>
           </div>
 
-          <SafeZoneCanvas
-            title={activeItem.title}
-            hookText={activeItem.script_hook || activeItem.hook}
-            bgUrl={selectedBgAssetUrl || undefined}
-            projectedShot={projectedShotInfo}
-          />
+          <div className="w-[300px] sm:w-[320px] aspect-[9/16] rounded-3xl border-2 border-dashed border-zline/80 flex flex-col items-center justify-center p-6 text-center text-zmuted bg-zpanel-2/40">
+            <Video className="w-12 h-12 mb-3 text-zcyan/60" />
+            <p className="text-xs font-bold text-zink">Simulator SafeZone Didepresiasi</p>
+            <p className="text-[11px] mt-1.5 text-zmuted leading-relaxed">
+              Arsitektur telah dialihkan ke Unified Studio Modal di Pipeline (mendukung Shorts, Mid-Form, dan Long-Form).
+            </p>
+            {projectedShotInfo && (
+              <div className="mt-4 p-2.5 rounded-xl bg-zpanel border border-zline w-full text-left">
+                <span className="text-[10px] font-bold text-zcyan">Shot {projectedShotInfo.shotIndex} ({projectedShotInfo.timeRange})</span>
+                <p className="text-xs text-zink font-medium truncate mt-0.5">{projectedShotInfo.onScreenText || '(Teks Layar Kosong)'}</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right Column: Storyboard & 7-Point Compliance Checklist */}

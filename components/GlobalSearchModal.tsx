@@ -7,7 +7,7 @@ import { Search, FileText, Lightbulb, ShieldCheck, Radio, X, ArrowRight } from '
 interface GlobalSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (type: string, id: string) => void;
+  onSelect: (type: string, id: string, item?: any) => void;
 }
 
 export function GlobalSearchModal({ isOpen, onClose, onSelect }: GlobalSearchModalProps) {
@@ -91,7 +91,7 @@ export function GlobalSearchModal({ isOpen, onClose, onSelect }: GlobalSearchMod
                     <button
                       key={`${item.id}-${idx}`}
                       onClick={() => {
-                        onSelect('content', item.id);
+                        onSelect('content', item.id, item);
                         onClose();
                       }}
                       className="w-full text-left p-2.5 rounded-xl bg-zpanel/60 hover:bg-zpanel border border-zline/50 hover:border-zcyan/50 flex items-center justify-between transition-colors group"

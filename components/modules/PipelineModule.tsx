@@ -1,26 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
-import { ContentItem, EditorialStatus, Pillar, VideoFormat } from '../../lib/types';
+import React, { useState, useEffect, useRef } from 'react';
+import { ContentItem, EditorialStatus, Pillar, VideoFormat, ContentTier } from '../../lib/types';
 import { studioStore } from '../../lib/storage';
 import { useToast } from '../ToastContainer';
 import { scrollToStudioTop } from '../../lib/scroll-utils';
+import { exportCleanNarrationForTts } from '../../lib/export-utils';
 import {
   LayoutList,
   Columns3,
   Search,
-  Filter,
   Plus,
   ArrowRight,
   Clock,
   AlertTriangle,
-  FilePenLine,
   Clapperboard,
   Trash2,
   Copy,
   ArrowUpDown,
   ChevronUp,
   ChevronDown,
+  MoreHorizontal,
+  FileText,
 } from 'lucide-react';
 
 interface PipelineModuleProps {
@@ -28,6 +29,7 @@ interface PipelineModuleProps {
   onNavigate: (tab: string, itemId?: string) => void;
   onEditItem: (item: ContentItem) => void;
   onCreateNew: () => void;
+  onOpenStudio?: (item: ContentItem) => void;
 }
 
 const STAGES: EditorialStatus[] = [
@@ -46,21 +48,58 @@ export function PipelineModule({
   onNavigate,
   onEditItem,
   onCreateNew,
+  onOpenStudio,
 }: PipelineModuleProps) {
   const { showToast } = useToast();
+  const isDraggingRef = useRef(false);
+
+  const handleOpenStudio = (item: ContentItem) => {
+    if (onOpenStudio) {
+      onOpenStudio(item);
+    } else {
+      onEditItem(item);
+    }
+  };
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
   const [search, setSearch] = useState('');
+  const [tierFilter, setTierFilter] = useState<'all' | 'short' | 'mid' | 'long'>('all');
   const [pillarFilter, setPillarFilter] = useState<string>('all');
   const [formatFilter, setFormatFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [visualFilter, setVisualFilter] = useState<string>('all');
+
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const [sortField, setSortField] = useState<'title' | 'format' | 'status' | 'production_due' | 'publish_date' | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<EditorialStatus | null>(null);
 
+  // Close dropdown menu on outside click or Escape key
+  useEffect(() => {
+    const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setActiveMenuId(null);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
   const handleSort = (field: 'title' | 'format' | 'status' | 'production_due' | 'publish_date') => {
+    setActiveMenuId(null);
     if (sortField === field) {
       setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
     } else {
@@ -74,7 +113,59 @@ export function PipelineModule({
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   })();
 
+  const handleCopyCleanNarration = async (item: ContentItem) => {
+    const text = exportCleanNarrationForTts(item);
+    if (!text || text.trim().length === 0) {
+      showToast('Naskah masih kosong, silakan lengkapi naskah di Studio terlebih dahulu', 'info', true);
+      return;
+    }
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        showToast('Narasi bersih disalin untuk Kaggle TTS!', 'success', true);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast('Narasi bersih disalin untuk Kaggle TTS!', 'success', true);
+      }
+    } catch {
+      showToast('Gagal menyalin naskah ke clipboard', 'error', true);
+    }
+  };
+
+  const renderTierBadge = (tier?: string) => {
+    const t = tier || 'short';
+    if (t === 'long') {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/15 text-purple-300 border border-purple-500/30 whitespace-nowrap">
+          Long-Form (5–8m)
+        </span>
+      );
+    }
+    if (t === 'mid') {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-teal-500/15 text-teal-300 border border-teal-500/30 whitespace-nowrap">
+          Mid-Form (1–3m)
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/15 text-sky-300 border border-sky-500/30 whitespace-nowrap">
+        Shorts (&lt;60s)
+      </span>
+    );
+  };
+
   const filteredItems = contentItems.filter((item) => {
+    const itemTier = item.content_tier || 'short';
+    const matchTier = tierFilter === 'all' || itemTier === tierFilter;
     const matchSearch =
       !search ||
       item.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -83,7 +174,7 @@ export function PipelineModule({
     const matchFormat = formatFilter === 'all' || item.format === formatFilter;
     const matchStatus = statusFilter === 'all' || item.status === statusFilter;
     const matchVisual = visualFilter === 'all' || item.visual_readiness === visualFilter;
-    return matchSearch && matchPillar && matchFormat && matchStatus && matchVisual;
+    return matchTier && matchSearch && matchPillar && matchFormat && matchStatus && matchVisual;
   });
 
   const sortedItems = [...filteredItems].sort((a, b) => {
@@ -126,13 +217,27 @@ export function PipelineModule({
   };
 
   const handleDuplicate = (item: ContentItem) => {
+    // Strip existing (Part X) or (Copy) suffix to find the true base title
+    const baseTitle = item.title.replace(/\s*\((?:Part\s*\d+|Copy)\)$/i, '').trim();
+
+    // Determine the next available Part number that doesn't collide with existing items
+    const existingTitles = new Set(contentItems.map((c) => (c.title || '').trim().toLowerCase()));
+    let partNum = 2;
+    let nextTitle = `${baseTitle} (Part ${partNum})`;
+    while (existingTitles.has(nextTitle.toLowerCase())) {
+      partNum++;
+      nextTitle = `${baseTitle} (Part ${partNum})`;
+    }
+
     studioStore.saveContentItem({
       ...item,
       id: undefined,
-      title: `${item.title} (Copy)`,
+      title: nextTitle,
       status: 'Ide',
+      publish_date: undefined,
+      production_due: undefined,
     });
-    showToast(`Konten diduplikasi dari "${item.title}"`, 'success', true);
+    showToast(`Konten diduplikasi: "${nextTitle}"`, 'success', true);
   };
 
   const handleDelete = (item: ContentItem) => {
@@ -150,9 +255,9 @@ export function PipelineModule({
           <div className="text-[11px] font-bold text-zcyan uppercase tracking-widest">
             CONTENT PIPELINE
           </div>
-          <h1 className="text-2xl font-black text-zink mt-1">Alur Kerja Editorial</h1>
+          <h1 className="text-2xl font-black text-zink mt-1">Pipeline Produksi Konten Zeinity</h1>
           <p className="text-xs text-zmuted mt-0.5">
-            Kelola perkembangan 8 tahapan produksi video dari ide awal hingga terbit di YouTube Shorts.
+            Kelola alur kerja editorial multi-format dari ide awal hingga terbit (Shorts, Mid-Form, dan Long-Form).
           </p>
         </div>
 
@@ -161,6 +266,7 @@ export function PipelineModule({
           <div className="flex items-center p-1 rounded-xl bg-zpanel-2 border border-zline">
             <button
               onClick={() => {
+                setActiveMenuId(null);
                 setViewMode('table');
                 scrollToStudioTop(true);
               }}
@@ -175,6 +281,7 @@ export function PipelineModule({
             </button>
             <button
               onClick={() => {
+                setActiveMenuId(null);
                 setViewMode('kanban');
                 scrollToStudioTop(true);
               }}
@@ -199,6 +306,37 @@ export function PipelineModule({
         </div>
       </div>
 
+      {/* Segmented Tier Filter Tabs */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 rounded-xl bg-zpanel border border-zline">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zpanel-2 border border-zline/60 overflow-x-auto">
+          {[
+            { id: 'all', label: 'Semua' },
+            { id: 'short', label: 'Shorts (<60s)' },
+            { id: 'mid', label: 'Mid-Form (1–3m)' },
+            { id: 'long', label: 'Long-Form (5–8m)' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveMenuId(null);
+                setTierFilter(tab.id as any);
+                scrollToStudioTop(false);
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                tierFilter === tab.id
+                  ? 'bg-zcyan text-black shadow-sm'
+                  : 'text-zmuted hover:text-zink'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <div className="text-xs text-zmuted pr-2">
+          Menampilkan <span className="font-bold text-zink">{filteredItems.length}</span> konten
+        </div>
+      </div>
+
       {/* Filter and Search Toolbar */}
       <div className="p-4 rounded-xl bg-zpanel border border-zline flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-1 min-w-[240px] max-w-sm">
@@ -207,7 +345,10 @@ export function PipelineModule({
             type="text"
             placeholder="Cari judul atau topik..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setActiveMenuId(null);
+              setSearch(e.target.value);
+            }}
             className="w-full bg-transparent text-xs text-zink placeholder-zmuted outline-none"
           />
         </div>
@@ -218,7 +359,10 @@ export function PipelineModule({
             <span className="text-zmuted text-[11px]">Pilar:</span>
             <select
               value={pillarFilter}
-              onChange={(e) => setPillarFilter(e.target.value)}
+              onChange={(e) => {
+                setActiveMenuId(null);
+                setPillarFilter(e.target.value);
+              }}
               className="bg-zpanel-2 border border-zline rounded-lg px-2.5 py-1 text-zink text-xs outline-none"
             >
               <option value="all">Semua Pilar</option>
@@ -235,14 +379,30 @@ export function PipelineModule({
             <span className="text-zmuted text-[11px]">Format:</span>
             <select
               value={formatFilter}
-              onChange={(e) => setFormatFilter(e.target.value)}
+              onChange={(e) => {
+                setActiveMenuId(null);
+                setFormatFilter(e.target.value);
+              }}
               className="bg-zpanel-2 border border-zline rounded-lg px-2.5 py-1 text-zink text-xs outline-none"
             >
               <option value="all">Semua Format</option>
-              <option value="Flash News">Flash News (20–30s)</option>
-              <option value="Quick Breakdown">Quick Breakdown (30–45s)</option>
-              <option value="Actionable Tip">Actionable Tip (45–60s)</option>
-              <option value="Myth Buster">Myth Buster (30–45s)</option>
+              <optgroup label="Shorts (<60s)">
+                <option value="Flash News">Flash News (20–30s)</option>
+                <option value="Quick Breakdown">Quick Breakdown (30–45s)</option>
+                <option value="Actionable Tip">Actionable Tip (45–60s)</option>
+                <option value="Myth Buster">Myth Buster (30–45s)</option>
+              </optgroup>
+              <optgroup label="Mid-Form (1–3m)">
+                <option value="Deep Explainer">Deep Explainer (1–3m)</option>
+                <option value="Mini Tutorial">Mini Tutorial (1–3m)</option>
+                <option value="Case Breakdown">Case Breakdown (1–3m)</option>
+              </optgroup>
+              <optgroup label="Long-Form (5–8m)">
+                <option value="Video Essay">Video Essay (5–8m)</option>
+                <option value="Masterclass">Masterclass (5–8m)</option>
+                <option value="Case Investigation">Case Investigation (5–8m)</option>
+                <option value="Ecosystem Review">Ecosystem Review (5–8m)</option>
+              </optgroup>
             </select>
           </div>
 
@@ -251,7 +411,10 @@ export function PipelineModule({
             <span className="text-zmuted text-[11px]">Status:</span>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setActiveMenuId(null);
+                setStatusFilter(e.target.value);
+              }}
               className="bg-zpanel-2 border border-zline rounded-lg px-2.5 py-1 text-zink text-xs outline-none"
             >
               <option value="all">Semua Status</option>
@@ -268,7 +431,10 @@ export function PipelineModule({
             <span className="text-zmuted text-[11px]">Visual:</span>
             <select
               value={visualFilter}
-              onChange={(e) => setVisualFilter(e.target.value)}
+              onChange={(e) => {
+                setActiveMenuId(null);
+                setVisualFilter(e.target.value);
+              }}
               className="bg-zpanel-2 border border-zline rounded-lg px-2.5 py-1 text-zink text-xs outline-none"
             >
               <option value="all">Semua Visual</option>
@@ -283,7 +449,7 @@ export function PipelineModule({
       {/* VIEW 1: TABLE / LIST VIEW (Default) */}
       {viewMode === 'table' ? (
         <div className="rounded-2xl border border-zline bg-zpanel overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto min-h-[360px] pb-24">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-zline/80 bg-zpanel-2/60 text-zmuted uppercase text-[10px] tracking-wider select-none">
@@ -407,7 +573,7 @@ export function PipelineModule({
                         {/* Title & Pillar */}
                         <td className="py-3 px-4 max-w-sm">
                           <button
-                            onClick={() => onEditItem(item)}
+                            onClick={() => handleOpenStudio(item)}
                             className="font-bold text-zink hover:text-zcyan text-left line-clamp-2 transition-colors"
                           >
                             {item.title}
@@ -433,6 +599,7 @@ export function PipelineModule({
 
                         {/* Format */}
                         <td className="py-3 px-3 whitespace-nowrap">
+                          <div className="mb-1">{renderTierBadge(item.content_tier)}</div>
                           <span className="font-semibold text-zink">{item.format}</span>
                           <div className="text-[10px] text-zmuted">
                             {item.word_count ? `${item.word_count} kata` : 'Belum diisi'}
@@ -489,44 +656,89 @@ export function PipelineModule({
 
                         {/* Actions */}
                         <td className="py-3 px-4 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1.5">
+                          <div className="flex items-center justify-end gap-2">
+                            {/* Primary Button */}
+                            <button
+                              onClick={() => handleOpenStudio(item)}
+                              className="px-2.5 py-1.5 rounded-lg bg-zcyan hover:bg-zcyan-hover text-black font-bold text-xs shadow-sm transition-all flex items-center gap-1"
+                              title="Buka Studio Pembuatan Konten"
+                            >
+                              <span>Buka Studio 🎬</span>
+                            </button>
+
+                            {/* Advance Button (if not Terbit) */}
                             {item.status !== 'Terbit' && (
                               <button
                                 onClick={() => handleAdvanceStatus(item)}
-                                className="px-2 py-1 rounded bg-zpanel-2 hover:bg-zline/60 border border-zline text-[11px] font-semibold text-zcyan hover:text-white transition-colors"
+                                className="px-2.5 py-1.5 rounded-lg bg-zpanel-2 hover:bg-zline/60 border border-zline text-xs font-semibold text-zcyan hover:text-white transition-colors"
                                 title="Majukan ke status berikutnya"
                               >
                                 Majukan →
                               </button>
                             )}
-                            <button
-                              onClick={() => onNavigate('script', item.id)}
-                              className="p-1.5 rounded-lg bg-zpanel-2 hover:bg-zline/60 border border-zline text-zmuted hover:text-zink"
-                              title="Tulis di Script Studio"
+
+                            {/* More Actions Popover (···) */}
+                            <div
+                              className="relative inline-block text-left"
+                              ref={activeMenuId === item.id ? menuRef : undefined}
                             >
-                              <FilePenLine className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => onNavigate('production', item.id)}
-                              className="p-1.5 rounded-lg bg-zpanel-2 hover:bg-zline/60 border border-zline text-zmuted hover:text-zcyan"
-                              title="Buka Safe Zone 9:16 & Storyboard"
-                            >
-                              <Clapperboard className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDuplicate(item)}
-                              className="p-1.5 rounded-lg bg-zpanel-2 hover:bg-zline/60 border border-zline text-zmuted hover:text-zink"
-                              title="Duplikat konten (Part 2)"
-                            >
-                              <Copy className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(item)}
-                              className="p-1.5 rounded-lg bg-zpanel-2 hover:bg-red-500/20 border border-zline text-zmuted hover:text-red-400"
-                              title="Hapus konten"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveMenuId(activeMenuId === item.id ? null : item.id);
+                                }}
+                                className={`p-1.5 rounded-lg border transition-colors ${
+                                  activeMenuId === item.id
+                                    ? 'bg-zpanel border-zcyan text-zcyan'
+                                    : 'bg-zpanel-2 hover:bg-zline/60 border border-zline text-zmuted hover:text-zink'
+                                }`}
+                                title="Aksi Lainnya"
+                              >
+                                <MoreHorizontal className="w-4 h-4" />
+                              </button>
+
+                              {activeMenuId === item.id && (
+                                <div
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="absolute right-0 top-full mt-1.5 w-56 rounded-xl bg-zpanel border border-zline shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 text-left"
+                                >
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveMenuId(null);
+                                      handleDuplicate(item);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zink hover:bg-zpanel-2 hover:text-zcyan transition-colors"
+                                  >
+                                    <Copy className="w-3.5 h-3.5 text-zmuted" />
+                                    <span>Duplikasi Konten (Part 2)</span>
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveMenuId(null);
+                                      handleCopyCleanNarration(item);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zink hover:bg-zpanel-2 hover:text-zaccent transition-colors"
+                                  >
+                                    <FileText className="w-3.5 h-3.5 text-zmuted" />
+                                    <span>Salin Narasi Bersih (Kaggle TTS)</span>
+                                  </button>
+                                  <div className="my-1 border-t border-zline/60" />
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveMenuId(null);
+                                      handleDelete(item);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-400 hover:bg-rose-500/10 transition-colors"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                                    <span>Hapus Konten</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -605,6 +817,7 @@ export function PipelineModule({
                           key={`${item.id}-${idx}`}
                           draggable
                           onDragStart={(e) => {
+                            isDraggingRef.current = true;
                             setDraggedItemId(item.id);
                             e.dataTransfer.setData('text/plain', item.id);
                             e.dataTransfer.effectAllowed = 'move';
@@ -612,6 +825,13 @@ export function PipelineModule({
                           onDragEnd={() => {
                             setDraggedItemId(null);
                             setDragOverStage(null);
+                            setTimeout(() => {
+                              isDraggingRef.current = false;
+                            }, 150);
+                          }}
+                          onClick={() => {
+                            if (isDraggingRef.current) return;
+                            handleOpenStudio(item);
                           }}
                           className={`p-3 rounded-xl bg-zpanel-2 border border-zline hover:border-zaccent/50 transition-all space-y-2 group shadow-sm cursor-grab active:cursor-grabbing ${
                             draggedItemId === item.id
@@ -619,13 +839,20 @@ export function PipelineModule({
                               : ''
                           }`}
                         >
-                          <div className="text-[10px] text-zmuted flex items-center justify-between">
-                            <span className="truncate max-w-[130px]">{item.pillar}</span>
-                            <span className="font-semibold text-zcyan">{item.format}</span>
+                          <div className="text-[10px] text-zmuted flex items-center justify-between gap-1">
+                            <span className="truncate max-w-[100px]">{item.pillar}</span>
+                            {renderTierBadge(item.content_tier)}
+                          </div>
+                          <div className="text-[11px] font-semibold text-zcyan truncate">
+                            {item.format}
                           </div>
 
                           <h4
-                            onClick={() => onEditItem(item)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (isDraggingRef.current) return;
+                              handleOpenStudio(item);
+                            }}
                             className="text-xs font-bold text-zink leading-snug line-clamp-2 hover:text-zcyan cursor-pointer transition-colors"
                           >
                             {item.title}
@@ -640,14 +867,22 @@ export function PipelineModule({
 
                           <div className="flex items-center justify-between pt-1 border-t border-zline/40 text-[10px]">
                             <button
-                              onClick={() => onNavigate('script', item.id)}
-                              className="text-zmuted hover:text-zink flex items-center gap-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (isDraggingRef.current) return;
+                                handleOpenStudio(item);
+                              }}
+                              className="text-zmuted hover:text-zink flex items-center gap-1 font-semibold"
+                              title="Buka Studio"
                             >
-                              <FilePenLine className="w-3 h-3" /> Script
+                              <Clapperboard className="w-3 h-3 text-zcyan" /> Studio 🎬
                             </button>
                             {stage !== 'Terbit' && (
                               <button
-                                onClick={() => handleAdvanceStatus(item)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAdvanceStatus(item);
+                                }}
                                 className="font-bold text-zcyan hover:underline flex items-center gap-0.5"
                               >
                                 Maju <ArrowRight className="w-3 h-3" />

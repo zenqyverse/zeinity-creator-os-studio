@@ -13,6 +13,7 @@ import {
 import { Sidebar } from '../components/Sidebar';
 import { TopHeader } from '../components/TopHeader';
 import { GlobalSearchModal } from '../components/GlobalSearchModal';
+import { UnifiedStudioModal } from '../components/UnifiedStudioModal';
 import { DrawerModal } from '../components/DrawerModal';
 import { ContentForm, ResearchSourceForm, MediaAssetForm, MetricForm } from '../components/forms/StudioForms';
 import { useToast } from '../components/ToastContainer';
@@ -25,8 +26,6 @@ import { PipelineModule } from '../components/modules/PipelineModule';
 import { RadarTrenModule } from '../components/modules/RadarTrenModule';
 import { IdeaBankModule } from '../components/modules/IdeaBankModule';
 import { CalendarModule } from '../components/modules/CalendarModule';
-import { ScriptStudioModule } from '../components/modules/ScriptStudioModule';
-import { ProductionStudioModule } from '../components/modules/ProductionStudioModule';
 import { ResearchModule } from '../components/modules/ResearchModule';
 import { AssetLibraryModule } from '../components/modules/AssetLibraryModule';
 import { AnalyticsModule } from '../components/modules/AnalyticsModule';
@@ -50,10 +49,12 @@ export default function ZeinityStudioPage() {
   const [aiConfigs, setAiConfigs] = useState<AiConfig[]>([]);
   const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>('Tersimpan');
 
-  // Modal drawers
+  // Modal drawers & Studio Modal
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [drawerType, setDrawerType] = useState<'content' | 'idea' | 'source' | 'asset' | 'metric' | null>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [isStudioModalOpen, setIsStudioModalOpen] = useState(false);
+  const [studioModalItem, setStudioModalItem] = useState<ContentItem | null>(null);
 
   // Scroll management
   const mainRef = useRef<HTMLElement>(null);
@@ -158,10 +159,11 @@ export default function ZeinityStudioPage() {
   // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // '/' triggers Global Search unless typing in input or textarea
+      // '/' triggers Global Search unless typing in input, textarea, or studio modal is open
       if (
         e.key === '/' &&
-        !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)
+        !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName) &&
+        !isStudioModalOpen
       ) {
         e.preventDefault();
         setIsSearchOpen(true);
@@ -169,9 +171,14 @@ export default function ZeinityStudioPage() {
 
       // Ctrl+S or Cmd+S instant save
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        if (isStudioModalOpen) {
+          // Handled internally by UnifiedStudioModal
+          return;
+        }
+
         e.preventDefault();
         
-        // 1. Dispatch custom event for page-level editors (e.g. ScriptStudioModule)
+        // 1. Dispatch custom event for page-level editors
         window.dispatchEvent(new CustomEvent('zeinity:save-draft'));
 
         // 2. If a form modal/drawer is open, trigger its submit button
@@ -187,8 +194,12 @@ export default function ZeinityStudioPage() {
         showToast('Draft instan tersimpan ke workspace', 'success', true);
       }
 
-      // Esc closes drawers
+      // Esc closes drawers & modals
       if (e.key === 'Escape') {
+        if (isStudioModalOpen) {
+          // Handled internally by UnifiedStudioModal
+          return;
+        }
         if (isSearchOpen) setIsSearchOpen(false);
         if (drawerType) setDrawerType(null);
       }
@@ -196,13 +207,53 @@ export default function ZeinityStudioPage() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isSearchOpen, drawerType, showToast]);
+  }, [isSearchOpen, drawerType, isStudioModalOpen, showToast]);
+
+  // Unified Studio Modal Handlers
+  const handleOpenStudioModal = (item: ContentItem) => {
+    const freshItem = studioStore.getContentById(item.id) || item;
+    setStudioModalItem(freshItem);
+    setIsStudioModalOpen(true);
+  };
+
+  const handleCloseStudioModal = () => {
+    setIsStudioModalOpen(false);
+  };
+
+  const handleUpdateStudioItem = (updatedItem: ContentItem) => {
+    studioStore.saveContentItem(updatedItem);
+    setStudioModalItem(updatedItem);
+    syncFromStore();
+  };
 
   // Tab Navigation Handler
   const handleNavigate = (tab: string, itemId?: string) => {
+    if (tab === 'script' || tab === 'production') {
+      if (itemId) {
+        const item = studioStore.getContentById(itemId) || contentItems.find((c) => c.id === itemId);
+        if (item) {
+          handleOpenStudioModal(item);
+        }
+      }
+      setCurrentTab('pipeline');
+      return;
+    }
     setCurrentTab(tab);
     if (itemId) setSelectedItemId(itemId);
   };
+
+  // Fallback redirect for retired script & production tabs
+  useEffect(() => {
+    if (currentTab === 'script' || currentTab === 'production') {
+      if (selectedItemId) {
+        const item = studioStore.getContentById(selectedItemId) || contentItems.find((c) => c.id === selectedItemId);
+        if (item) {
+          handleOpenStudioModal(item);
+        }
+      }
+      setCurrentTab('pipeline');
+    }
+  }, [currentTab, selectedItemId, contentItems]);
 
   // Open Drawer Handlers
   const handleOpenCreateContent = (initialData?: Partial<ContentItem>) => {
@@ -306,6 +357,7 @@ export default function ZeinityStudioPage() {
               onNavigate={handleNavigate}
               onCreateContent={() => handleOpenCreateContent()}
               onCreateIdea={() => handleOpenCreateIdea()}
+              onOpenStudio={handleOpenStudioModal}
             />
           )}
 
@@ -313,7 +365,8 @@ export default function ZeinityStudioPage() {
             <PipelineModule
               contentItems={contentItems}
               onNavigate={handleNavigate}
-              onEditItem={(item) => handleOpenCreateContent(item)}
+              onEditItem={handleOpenStudioModal}
+              onOpenStudio={handleOpenStudioModal}
               onCreateNew={() => handleOpenCreateContent()}
             />
           )}
@@ -339,26 +392,7 @@ export default function ZeinityStudioPage() {
           {currentTab === 'calendar' && (
             <CalendarModule
               contentItems={contentItems}
-              onOpenContent={(item) => {
-                setSelectedItemId(item.id);
-                setCurrentTab('script');
-              }}
-            />
-          )}
-
-          {currentTab === 'script' && (
-            <ScriptStudioModule
-              contentItems={contentItems}
-              selectedItemId={selectedItemId}
-              onNavigate={handleNavigate}
-            />
-          )}
-
-          {currentTab === 'production' && (
-            <ProductionStudioModule
-              contentItems={contentItems}
-              selectedItemId={selectedItemId}
-              onNavigate={handleNavigate}
+              onOpenContent={handleOpenStudioModal}
             />
           )}
 
@@ -396,10 +430,12 @@ export default function ZeinityStudioPage() {
       <GlobalSearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
-        onSelect={(type, id) => {
+        onSelect={(type, id, item) => {
           if (type === 'content') {
-            setSelectedItemId(id);
-            setCurrentTab('script');
+            const target = item || studioStore.getContentById(id) || contentItems.find((c) => c.id === id);
+            if (target) {
+              handleOpenStudioModal(target);
+            }
           } else if (type === 'idea') {
             setCurrentTab('ideas');
           } else if (type === 'source') {
@@ -502,6 +538,14 @@ export default function ZeinityStudioPage() {
           </span>
         </button>
       )}
+
+      {/* Unified Studio Modal */}
+      <UnifiedStudioModal
+        isOpen={isStudioModalOpen}
+        item={studioModalItem}
+        onClose={handleCloseStudioModal}
+        onUpdateItem={handleUpdateStudioItem}
+      />
 
       <MacTerminalDock />
     </div>

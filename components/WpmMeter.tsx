@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { VideoFormat } from '../lib/types';
+import { ContentTier, VideoFormat } from '../lib/types';
 import { calculateScriptEconomy } from '../lib/validator';
 import { Gauge, Clock, FileText, AlertTriangle } from 'lucide-react';
 
@@ -12,6 +12,7 @@ interface WpmMeterProps {
   ending: string;
   format: VideoFormat;
   targetWpm: number;
+  tier?: ContentTier;
   onWpmChange?: (wpm: number) => void;
 }
 
@@ -22,19 +23,23 @@ export function WpmMeter({
   ending,
   format,
   targetWpm,
+  tier,
   onWpmChange,
 }: WpmMeterProps) {
-  const econ = calculateScriptEconomy(hook, context, payoff, ending, format, targetWpm);
+  const econ = calculateScriptEconomy(hook, context, payoff, ending, format, targetWpm, tier);
+
+  const minWords = econ.formatTargetSeconds.wordMin ?? econ.tierTarget?.wordMin ?? 50;
+  const maxWords = econ.formatTargetSeconds.wordMax ?? econ.tierTarget?.wordMax ?? 140;
 
   // Word count styling
   let wordColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30';
-  let wordLabel = 'Ideal (90–140 kata)';
-  if (econ.totalWords < 90) {
+  let wordLabel = `Ideal (${minWords}–${maxWords} kata)`;
+  if (econ.totalWords < minWords) {
     wordColor = 'text-amber-400 bg-amber-500/10 border-amber-500/30';
-    wordLabel = `Kurang ${90 - econ.totalWords} kata`;
-  } else if (econ.totalWords > 140) {
+    wordLabel = `Kurang ${minWords - econ.totalWords} kata`;
+  } else if (econ.totalWords > maxWords) {
     wordColor = 'text-red-400 bg-red-500/10 border-red-500/30';
-    wordLabel = `Kelebihan ${econ.totalWords - 140} kata`;
+    wordLabel = `Kelebihan ${econ.totalWords - maxWords} kata`;
   }
 
   // Duration styling
@@ -44,6 +49,10 @@ export function WpmMeter({
   } else if (econ.formatCompliance === 'Terlalu Panjang') {
     durColor = 'text-red-400';
   }
+
+  const maxSec = econ.tierTarget?.max || 60;
+  const tierName =
+    econ.tier === 'mid' ? 'Mid-Form (180 Detik)' : econ.tier === 'long' ? 'Long-Form (480 Detik)' : 'YouTube Shorts (60 Detik)';
 
   return (
     <div className="rounded-xl border border-zline/60 bg-zpanel/80 p-4 space-y-4">
@@ -63,7 +72,7 @@ export function WpmMeter({
         <div className="p-2.5 rounded-lg bg-red-500/15 border border-red-500/40 flex items-start gap-2 text-[11px] text-red-300">
           <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
           <div>
-            <strong>Peringatan Batas Maksimal 60 Detik:</strong> Estimasi durasi ({econ.estimatedSeconds}s) melebihi batas YouTube Shorts! Pangkas kata agar tidak terpotong saat tayang.
+            <strong>Peringatan Batas Maksimal {maxSec} Detik:</strong> Estimasi durasi ({econ.estimatedSeconds}s) melebihi batas {tierName}! Pangkas kata agar tidak terpotong saat tayang.
           </div>
         </div>
       )}
@@ -78,7 +87,7 @@ export function WpmMeter({
           </div>
           <div className="text-2xl font-extrabold text-zink">
             {econ.totalWords}
-            <span className="text-xs font-normal text-zmuted ml-1">/ 90-140</span>
+            <span className="text-xs font-normal text-zmuted ml-1">/ {minWords}-{maxWords}</span>
           </div>
         </div>
 

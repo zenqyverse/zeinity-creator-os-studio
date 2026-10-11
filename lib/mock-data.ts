@@ -18,6 +18,8 @@ export const INITIAL_CONTENT_ITEMS: ContentItem[] = [
     title: 'Kenapa AI di Ponsel Bisa Bekerja Offline?',
     pillar: 'AI & Technology',
     format: 'Quick Breakdown',
+    content_tier: 'short',
+    aspect_ratio: '9:16',
     status: 'Penulisan',
     priority: 'Tinggi',
     visual_readiness: 'Siap',
@@ -26,8 +28,8 @@ export const INITIAL_CONTENT_ITEMS: ContentItem[] = [
     script_context: 'Pabrikan chipset modern sekarang menyematkan prosesor neural NPU khusus langsung di dalam motherboard ponsel cerdas kita semua.',
     script_payoff: 'Alih-alih mengirim seluruh data pribadimu ke server awan raksasa di luar negeri, model bahasa mini berukuran dua gigabita dijalankan langsung di memori RAM perangkat. Proses komputasi selesai secara instan dalam hitungan milidetik, menghemat baterai secara signifikan, dan yang terpenting, data percakapan rahasiamu tidak pernah bocor keluar dari perangkat fisik ponsel.',
     script_ending: 'Makanya, cek spesifikasi ponselmu berikutnya apakah sudah punya chip NPU mandiri atau belum sebelum memutuskan membeli?',
-    word_count: 104,
-    duration_estimate: 43.0,
+    word_count: 100,
+    duration_estimate: 41.4,
     target_wpm: 145,
     publish_date: '2026-10-15T07:00:00+07:00', // Thursday 07:00 WIB
     production_due: '2026-10-13',
@@ -42,16 +44,18 @@ export const INITIAL_CONTENT_ITEMS: ContentItem[] = [
     title: 'Bagaimana Dompet Digital Mengubah Kebiasaan Belanja?',
     pillar: 'Digital Economy & Consumer Culture',
     format: 'Quick Breakdown',
+    content_tier: 'short',
+    aspect_ratio: '9:16',
     status: 'Review',
     priority: 'Sedang',
     visual_readiness: 'Siap',
     hook: 'Kenapa rasanya lebih gampang boros saat bayar pakai scan QR?',
     script_hook: 'Kenapa rasanya jauh lebih gampang boros saat belanja pakai scan QR dibanding uang tunai fisik?',
-    script_context: 'Psikologi ekonomi digital menyebut fenomena ini sebagai pain of paying yang menghilang.',
-    script_payoff: 'Saat kita mengeluarkan uang kertas fisik, otak mencatat kehilangan aset secara nyata. Namun gesekan digital memotong rasa sakit itu menjadi satu ketukan jari tanpa beban visual. Dompet digital sengaja mempermudah aliran transaksi.',
-    script_ending: 'Coba periksa mutasi rekening bulananmu sekarang, berapa persen belanja yang sebenarnya tidak kamu rencanakan?',
-    word_count: 104,
-    duration_estimate: 43.0,
+    script_context: 'Psikologi ekonomi digital dan perilaku konsumen modern menyebut fenomena ini sebagai pain of paying yang menghilang drastis.',
+    script_payoff: 'Saat kita mengeluarkan uang kertas fisik, otak mencatat kehilangan aset secara nyata. Namun gesekan digital memotong rasa sakit itu menjadi satu ketukan jari tanpa beban visual. Saldo berkurang tanpa suara, membuat dompet digital sengaja mempermudah aliran transaksi impulsif setiap harinya.',
+    script_ending: 'Coba periksa mutasi rekening bulananmu sekarang, berapa persen transaksi belanja yang sebenarnya tidak kamu rencanakan sebelumnya?',
+    word_count: 88,
+    duration_estimate: 36.4,
     target_wpm: 145,
     publish_date: '2026-10-18T07:00:00+07:00', // Sunday 07:00 WIB
     production_due: '2026-10-16',
@@ -66,6 +70,8 @@ export const INITIAL_CONTENT_ITEMS: ContentItem[] = [
     title: 'Apa Bedanya Cloud Gaming dan Game Lokal?',
     pillar: 'Gaming & Digital Entertainment',
     format: 'Myth Buster',
+    content_tier: 'short',
+    aspect_ratio: '9:16',
     status: 'Terjadwal',
     priority: 'Sedang',
     visual_readiness: 'Siap',
@@ -74,8 +80,8 @@ export const INITIAL_CONTENT_ITEMS: ContentItem[] = [
     script_context: 'Mitosnya cloud gaming menggantikan PC mahal seketika tanpa kelemahan.',
     script_payoff: 'Faktanya, game dijalankan di superkomputer server lalu layarnya di-streaming seperti menonton video YouTube. Tapi kuncinya ada pada latency atau jeda input. Jika koneksi wifi rumahmu tidak stabil di bawah 20 milidetik, karaktermu akan bergerak lambat saat ditekan.',
     script_ending: 'Jadi cloud gaming sangat cocok untuk game cerita santai, tapi hindari untuk pertandingan kompetitif cepat.',
-    word_count: 112,
-    duration_estimate: 46.3,
+    word_count: 79,
+    duration_estimate: 32.7,
     target_wpm: 145,
     publish_date: '2026-10-12T07:00:00+07:00', // Monday 07:00 WIB
     production_due: '2026-10-10',
@@ -90,6 +96,8 @@ export const INITIAL_CONTENT_ITEMS: ContentItem[] = [
     title: 'Apa Saja Fitur Baru YouTube Shorts Bulan Ini?',
     pillar: 'Internet & Social Media',
     format: 'Flash News',
+    content_tier: 'short',
+    aspect_ratio: '9:16',
     status: 'Siap Produksi',
     priority: 'Tinggi',
     visual_readiness: 'Siap',
@@ -98,8 +106,8 @@ export const INITIAL_CONTENT_ITEMS: ContentItem[] = [
     script_context: 'Tiga pembaruan utama resmi dirilis serentak di pembaruan aplikasi global.',
     script_payoff: 'Pertama, durasi video kini bisa diekspor hingga 3 menit. Kedua, fitur auto-sync audio otomatis memotong klip mengikuti ketukan musik latar. Ketiga, tombol stiker remix interaktif langsung masuk ke library feed.',
     script_ending: 'Buka aplikasi YouTube di ponselmu dan cek apakah tab editor baru ini sudah muncul?',
-    word_count: 92,
-    duration_estimate: 27.5,
+    word_count: 67,
+    duration_estimate: 27.7,
     target_wpm: 145,
     publish_date: '2026-10-19T07:00:00+07:00',
     production_due: '2026-10-14',
@@ -114,16 +122,18 @@ export const INITIAL_CONTENT_ITEMS: ContentItem[] = [
     title: 'Bagaimana Cara Mematikan Pelacakan Lokasi Tersembunyi?',
     pillar: 'Modern Life & Human Behavior',
     format: 'Actionable Tip',
+    content_tier: 'short',
+    aspect_ratio: '9:16',
     status: 'Editing',
     priority: 'Sedang',
     visual_readiness: 'Siap',
     hook: 'Ternyata mematikan GPS belum tentu menghentikan pelacakan lokasimu.',
-    script_hook: 'Ternyata mematikan tombol GPS di bar notifikasi belum tentu menghentikan pelacakan posisi ponselmu secara penuh.',
-    script_context: 'Ada setelan pemindaian wifi dan bluetooth tersembunyi yang tetap aktif di latar belakang.',
-    script_payoff: 'Buka menu Pengaturan ponsel, masuk ke Privasi dan Lokasi, lalu pilih Layanan Lokasi. Matikan pemindaian wifi scanning dan bluetooth beacon. Dua setelan ini yang sering mengirimkan data koordinat kasar ponsel ke server pihak ketiga tanpa disadari.',
-    script_ending: 'Simpan video ini sekarang dan bagikan ke temanmu yang peduli dengan privasi baterai.',
-    word_count: 108,
-    duration_estimate: 44.7,
+    script_hook: 'Ternyata mematikan tombol GPS di bilah notifikasi ponsel cerdasmu belum tentu menghentikan pelacakan posisi perangkatmu secara menyeluruh oleh aplikasi asing.',
+    script_context: 'Sistem operasi ponsel modern memiliki setelan pemindaian jaringan nirkabel tersembunyi yang tetap bekerja aktif di latar belakang meski tombol GPS utama dalam kondisi mati.',
+    script_payoff: 'Untuk mematikannya secara permanen, buka menu Pengaturan ponselmu, masuk ke bagian Lokasi, lalu pilih menu Layanan Lokasi. Di sana, matikan opsi Pemindaian Wi-Fi dan Pemindaian Bluetooth. Dua fitur latar belakang inilah yang secara berkala memetakan koordinat router wifi sekitar dan terus mengirimkan estimasi posisimu ke server pihak ketiga tanpa disadari.',
+    script_ending: 'Lakukan langkah pencegahan ini sekarang juga, simpan video ini untuk referensi nanti, dan bagikan ke teman terdekatmu yang peduli dengan privasi digital ponsel.',
+    word_count: 117,
+    duration_estimate: 48.4,
     target_wpm: 145,
     publish_date: '2026-10-22T07:00:00+07:00',
     production_due: '2026-10-17',
@@ -138,6 +148,8 @@ export const INITIAL_CONTENT_ITEMS: ContentItem[] = [
     title: 'Kenapa Baterai Ponsel Lebih Cepat Habis di Sinyal Lemah?',
     pillar: 'AI & Technology',
     format: 'Quick Breakdown',
+    content_tier: 'short',
+    aspect_ratio: '9:16',
     status: 'Terbit',
     priority: 'Sedang',
     visual_readiness: 'Siap',
@@ -146,8 +158,8 @@ export const INITIAL_CONTENT_ITEMS: ContentItem[] = [
     script_context: 'Bukan karena aplikasi nakal, melainkan mekanisme modem internal pemancar ponsel.',
     script_payoff: 'Saat sinyal BTS seluler jauh atau terhalang dinding beton, modem otomatis menaikkan daya transmisi radio hingga level maksimal agar sambungan tidak putus. Proses pemindaian frekuensi berulang ini menyedot daya baterai berlipat ganda dibanding saat sinyal penuh.',
     script_ending: 'Solusi tercepatnya adalah aktifkan Airplane Mode saat berada di ruang minim sinyal untuk menyelamatkan sisa bateraimu.',
-    word_count: 114,
-    duration_estimate: 47.1,
+    word_count: 78,
+    duration_estimate: 32.3,
     target_wpm: 145,
     publish_date: '2026-10-05T07:00:00+07:00',
     production_due: '2026-10-03',
@@ -155,6 +167,172 @@ export const INITIAL_CONTENT_ITEMS: ContentItem[] = [
     notes: 'Video terbit dengan Viewed 74% dan APV 102%. Target benchmark tercapai.',
     created_at: '2026-10-01T10:00:00Z',
     updated_at: '2026-10-05T07:30:00Z',
+  },
+  {
+    id: 'zein-c007',
+    type: 'content',
+    title: 'Bagaimana AI Generatif Mengubah Industri Kreatif Digital?',
+    pillar: 'AI & Technology',
+    format: 'Deep Explainer',
+    content_tier: 'mid',
+    aspect_ratio: '16:9',
+    status: 'Penulisan',
+    priority: 'Tinggi',
+    visual_readiness: 'Siap',
+    hook: 'Pernah bayangkan satu prompt teks bisa menggantikan satu tim desainer grafis dalam hitungan detik?',
+    script_hook: 'Pernah bayangkan satu baris prompt teks sederhana bisa menggantikan alur kerja satu tim studio desain grafis dalam hitungan detik? Ini bukan lagi masa depan fiksi, melainkan realitas industri kreatif hari ini.',
+    script_chapters: [
+      {
+        id: 'c007-ch1',
+        chapter_number: 1,
+        title: 'Konteks Pergeseran Alat Kerja Kreatif',
+        timestamp_estimate: '00:13',
+        content: 'Selama dua dekade terakhir, perangkat lunak kreatif selalu menuntut keahlian teknis tingkat tinggi, mulai dari pemahaman sistem layer hingga penguasaan kurva bezier yang rumit. Namun, kemunculan model difusi dan generative transformer membalikkan seluruh piramida produksi. Sekarang, kreativitas tidak lagi dibatasi oleh kemampuan motorik mengoperasikan software, melainkan ketajaman konsep dan artikulasi ide dalam bentuk prompt terstruktur.',
+        word_count: 55,
+      },
+      {
+        id: 'c007-ch2',
+        chapter_number: 2,
+        title: 'Tantangan Hak Cipta dan Autentisitas',
+        timestamp_estimate: '00:36',
+        content: 'Perubahan radikal ini memicu friksi hukum terbesar dalam sejarah industri modern, terutama terkait dataset pelatihan tanpa izin dan perlindungan hak cipta komersial. Agensi global kini mulai menerapkan protokol hybrid yang sangat ketat, di mana AI hanya diperlakukan sebagai co-pilot eksplorasi visual awal, sementara kurasi akhir dan sentuhan artistik tetap dikendalikan penuh oleh kurator manusia berpengalaman.',
+        word_count: 55,
+      },
+      {
+        id: 'c007-ch3',
+        chapter_number: 3,
+        title: 'Adaptasi Nilai Tambah Desainer Masa Depan',
+        timestamp_estimate: '00:59',
+        content: 'Bagi para pekerja kreatif digital, ancaman sebenarnya bukan berasal dari kecerdasan buatan itu sendiri, melainkan dari kompetitor yang mampu mengintegrasikan AI sepuluh kali lebih produktif. Mereka yang bertahan adalah mereka yang bergeser dari sekadar operator teknis menjadi art director visioner yang memahami seni storytelling emosional dan psikologi audiens secara mendalam dan menyeluruh.',
+        word_count: 52,
+      },
+    ],
+    script_ending: 'Pertanyaannya untukmu sekarang, apakah portofolio karyamu saat ini sudah siap bersaing di era otomatisasi visual? Tulis pendapatmu di kolom komentar dan jangan lupa simpan video ini.',
+    word_count: 219,
+    duration_estimate: 90.6,
+    target_wpm: 145,
+    publish_date: '2026-10-25T07:00:00+07:00',
+    production_due: '2026-10-21',
+    source_url: 'https://openai.com/research',
+    notes: 'Video Mid-Form 1-3 menit. Gunakan rekaman demo alur kerja Generative Canvas dan Figma.',
+    seo_description: `Pernah bayangkan satu prompt teks bisa menggantikan alur kerja tim studio desain? Dalam video Deep Explainer ini, kita membedah bagaimana AI generatif mengubah total industri kreatif digital, tantangan hak cipta, dan strategi adaptasi pekerja kreatif masa depan.
+
+⏱️ TIMESTAMPS / CHAPTERS:
+00:00 Visual Hook & Premis Utama
+00:13 Konteks Pergeseran Alat Kerja Kreatif
+00:36 Tantangan Hak Cipta dan Autentisitas
+00:59 Adaptasi Nilai Tambah Desainer Masa Depan
+01:20 Outro & Kesimpulan
+
+📌 RINGKASAN PEMBAHASAN:
+• Perubahan piramida produksi visual dari teknis software ke artikulasi ide.
+• Dilema etika dan perlindungan hak cipta dataset komersial.
+• Transformasi peran desainer menjadi art director berbasis konsep.
+
+🔗 SUMBER & RUJUKAN:
+- https://openai.com/research
+
+#Zeinity #AITechnology #DesainGrafis #IndustriKreatif`,
+    seo_tags: ['ai generatif', 'industri kreatif', 'desain grafis', 'teknologi', 'zeinity', 'deep explainer', 'masa depan kerja', 'etika ai'],
+    pinned_comment_prompt: 'Menurutmu, apakah karya visual buatan AI berhak mendapatkan perlindungan hak cipta komersial? Tulis alasanmu di bawah! 👇',
+    thumbnail_hooks: ['AI GANTIKAN DESAINER?!', 'ERA BARU DESAIN GRAFIS', 'JANGAN SALAHKAN AI!'],
+    created_at: '2026-10-09T08:00:00Z',
+    updated_at: '2026-10-10T14:00:00Z',
+  },
+  {
+    id: 'zein-c008',
+    type: 'content',
+    title: 'Bagaimana Perang Chip Semikonduktor Mengendalikan Masa Depan Dunia?',
+    pillar: 'AI & Technology',
+    format: 'Video Essay',
+    content_tier: 'long',
+    aspect_ratio: '16:9',
+    status: 'Riset',
+    priority: 'Tinggi',
+    visual_readiness: 'Siap',
+    hook: 'Benda sekecil kuku jempol inilah yang diam-diam menentukan peta kekuatan geopolitik dunia hari ini.',
+    script_hook: 'Benda sekecil kuku jempol inilah yang diam-diam menentukan peta kekuatan militer, stabilitas ekonomi, dan masa depan kecerdasan buatan di seluruh dunia hari ini. Tanpa pasokan mikrocip silikon tercanggih, seluruh pusat data AI raksasa, armada satelit pertahanan, hingga jalur produksi mobil listrik modern akan lumpuh total hanya dalam hitungan minggu saja. Selamat datang di babak baru perebutan hegemoni teknologi global yang paling mahal, paling kompleks, dan paling menentukan dalam sejarah modern peradaban manusia: perang chip semikonduktor.',
+    script_chapters: [
+      {
+        id: 'c008-ch1',
+        chapter_number: 1,
+        title: 'Anatomi Silikon dan Hambatan Fisika Ekstrem',
+        timestamp_estimate: '00:31',
+        content: 'Untuk memahami betapa rapuhnya fondasi peradaban digital kita saat ini, kita harus menyelami ke tingkat atomik silikon. Sebuah cip prosesor modern menampung puluhan miliar transistor mikroskopis yang dicetak di atas lempengan silikon seluas koin kecil. Jarak antar komponen penghantar listrik ini kini telah menembus batas ekstrem dua nanometer, atau puluhan ribu kali lebih tipis daripada sehelai rambut manusia biasa. Pada skala kerapatan seekstrem ini, hukum fisika kuantum mulai memicu kebocoran elektron yang sangat berbahaya bagi kestabilan komputasi. Mencetak sirkuit yang begitu kecil membutuhkan teknologi litografi sinar ultraviolet ekstrem tingkat dewa. Monopoli teknologi ini hanya dikuasai oleh satu korporasi tunggal di Belanda, yaitu ASML. Setiap unit mesin litografi raksasa mereka berharga lebih dari lima triliun rupiah, dirakit dari ratusan ribu suku cadang ultra-presisi dari berbagai penjuru dunia, menjadikannya sebagai puncak mahakarya rekayasa teknik industri paling spektakuler yang pernah diciptakan oleh sejarah peradaban modern manusia secara nyata.',
+        word_count: 145,
+      },
+      {
+        id: 'c008-ch2',
+        chapter_number: 2,
+        title: 'Titik Chokepoint Tunggal di Selat Taiwan',
+        timestamp_estimate: '01:31',
+        content: 'Meskipun mesin litografi paling canggih dirakit di Eropa dan arsitektur logikanya didesain oleh raksasa teknologi Amerika Serikat, lebih dari sembilan puluh persen fasilitas fabrikasi fisik cip tercanggih dunia terkonsentrasi di satu pulau kecil: Taiwan. TSMC, atau Taiwan Semiconductor Manufacturing Company, telah bertransformasi menjadi benteng silikon yang sama sekali tak tergantikan bagi industri dunia. Budaya rekayasa tanpa kompromi, fasilitas ruangan bersih bebas debu tingkat ekstrem, serta jaringan pemasok lokal yang padat membuat kompetitor global mana pun tertinggal bertahun-tahun di belakang. Keberadaan ekosistem TSMC menciptakan perisai silikon yang melindungi pulau tersebut secara geopolitik, namun secara bersamaan melahirkan titik chokepoint logistik paling rapuh di muka bumi. Apabila rantai pengapalan di Selat Taiwan terganggu sedikit saja akibat konflik militer atau bencana alam, seluruh roda industri teknologi dan otomotif dunia dipastikan akan terhenti seketika tanpa ampun. Oleh karena itu, faktor kestabilan kawasan ini sangat mutlak.',
+        word_count: 140,
+      },
+      {
+        id: 'c008-ch3',
+        chapter_number: 3,
+        title: 'Perlombaan Subsidi Raksasa dan Swasembada Negara',
+        timestamp_estimate: '02:29',
+        content: 'Menyadari betapa berbahayanya ketergantungan sepihak ini, berbagai negara adidaya kini meluncurkan perang subsidi manufaktur terbesar sepanjang sejarah industri. Pemerintah Amerika Serikat mengesahkan pendanaan Chips Act senilai ratusan triliun rupiah demi membujuk pabrik fabrikasi kembali beroperasi di tanah air mereka. Uni Eropa, Jepang, dan Korea Selatan tidak tinggal diam dengan menggelontorkan insentif pajak serupa untuk mengamankan ketahanan cip dalam negeri. Pada saat yang sama, pembatasan ekspor peralatan litografi canggih ke kawasan Asia memicu perlombaan swasembada teknologi nasional yang sangat masif. Namun mereplikasi ekosistem semikonduktor terbukti tidak semudah membagikan uang tunai. Membangun sebuah pabrik fabrikasi mutakhir membutuhkan pasokan air deionisasi jutaan liter setiap harinya, jaringan transmisi listrik yang tak boleh berkedip sekejap pun, dan yang paling krusial: ketersediaan ribuan insinyur litografi dengan pengalaman praktis puluhan tahun yang benar-benar mustahil diciptakan secara instan melalui suntikan dana moneter tanpa fondasi dedikasi riset sains panjang.',
+        word_count: 140,
+      },
+      {
+        id: 'c008-ch4',
+        chapter_number: 4,
+        title: 'Dampak Ledakan AI Terhadap Kebutuhan Daya Komputasi',
+        timestamp_estimate: '03:27',
+        content: 'Ketegangan pasokan semikonduktor semakin meledak seiring dengan lahirnya era kecerdasan buatan generatif. Melatih satu model bahasa skala besar memerlukan puluhan ribu unit prosesor grafis akselerator khusus yang bekerja paralel siang dan malam. Permintaan pasar global terhadap cip komputasi awan melonjak hingga ribuan persen hanya dalam tempo dua tahun terakhir, memicu kelangkaan alokasi wafer silikon di seluruh pabrik terkemuka dunia. Persaingan ini bukan sekadar mengenai kecepatan pemrosesan inti prosesor, melainkan perebutan pasokan cip memori berkecepatan ultra-tinggi yang berfungsi sebagai jembatan data. Siapa pun kekuatan global yang berhasil menguasai klaster komputasi cip tercepat akan memimpin kecepatan penemuan ilmiah masa depan, mendominasi sistem pertahanan militer otonom tercanggih, dan memegang kendali penuh atas infrastruktur kecerdasan buatan global yang mengatur jalannya kehidupan miliaran manusia di planet bumi. Siapa yang menguasai chip AI, dialah yang akan memenangkan peradaban abad modern ini.',
+        word_count: 135,
+      },
+      {
+        id: 'c008-ch5',
+        chapter_number: 5,
+        title: 'Konsekuensi Bagi Konsumen dan Negara Berkembang',
+        timestamp_estimate: '04:23',
+        content: 'Lalu apa makna pertarungan teknologi tingkat tinggi ini bagi kehidupan kita sehari-hari dan posisi strategis negara berkembang seperti Indonesia? Pertama, era perangkat elektronik murah resmi berakhir karena fragmentasi rantai pasok global menaikkan biaya produksi cip secara permanen. Proteksionisme teknologi membuat gadget konsumen ke depan akan semakin mahal dan terkotak-kotak dalam standar regional. Kedua, bagi negara berkembang, tantangan terbesarnya adalah menghindari jebakan ketergantungan digital abadi. Tanpa kemampuan manufaktur cip hulu, satu-satunya peluang strategis adalah menguasai hilirisasi perangkat lunak, melatih talenta rekayasa data lokal, dan membangun pusat data mandiri yang ramah energi. Apabila kita hanya berdiam diri sebagai konsumen pasif tanpa kepemilikan kedaulatan teknologi mandiri, kita hanya akan menjadi penonton dalam pergeseran peradaban dunia yang dipimpin sepenuhnya oleh para pemilik pabrik silikon raksasa. Kedaulatan komputasi bangsa menjadi benteng pertahanan paling esensial bagi generasi masa depan kita bersama.',
+        word_count: 135,
+      },
+    ],
+    script_ending: 'Pada akhirnya, masa depan dunia tidak lagi ditentukan semata oleh cadangan minyak bumi atau kekuatan armada militer tradisional, melainkan oleh siapa yang menguasai pencetakan sirkuit di atas lapisan tipis wafer silikon. Menurut pandanganmu, apakah dunia akan berhasil memecah monopoli rantai pasok cip ini sebelum krisis geopolitik berikutnya meletus? Tulis analisis tajammu di kolom komentar di bawah, bagikan video essay ini kepada rekan-rekanmu, dan pastikan berlangganan Zeinity sekarang untuk investigasi mendalam seputar teknologi berikutnya. Salam inovasi.',
+    word_count: 845,
+    duration_estimate: 349.7,
+    target_wpm: 145,
+    publish_date: '2026-10-31T19:00:00+07:00', // Saturday 19:00 WIB
+    production_due: '2026-10-27',
+    source_url: 'https://www.asml.com/en/technology',
+    notes: 'Flagship Video Essay 5-8 menit format 16:9 horizontal. B-roll litografi ASML dan TSMC fab cleanroom.',
+    seo_description: `Benda sekecil kuku jempol inilah yang diam-diam menentukan peta kekuatan militer, stabilitas ekonomi, dan masa depan kecerdasan buatan di seluruh dunia. Dalam video essay mendalam ini, kita membedah anatomi perang chip semikonduktor global, monopoli mesin litografi ASML, posisi kritis TSMC di Taiwan, hingga konsekuensi bagi kedaulatan teknologi Indonesia.
+
+⏱️ TIMESTAMPS / CHAPTERS:
+00:00 Visual Hook & Premis Geopolitik
+00:31 Anatomi Silikon dan Hambatan Fisika Ekstrem
+01:31 Titik Chokepoint Tunggal di Selat Taiwan
+02:29 Perlombaan Subsidi Raksasa dan Swasembada Negara
+03:27 Dampak Ledakan AI Terhadap Kebutuhan Daya Komputasi
+04:23 Konsekuensi Bagi Konsumen dan Negara Berkembang
+05:19 Outro & Masa Depan Kedaulatan Digital
+
+📌 RINGKASAN PEMBAHASAN:
+• Batas fisika kuantum dalam pencetakan sirkuit 2 nanometer dan mesin EUV ASML seharga Rp 5 triliun.
+• Mengapa 90% fabrikasi cip canggih dunia terkonsentrasi di TSMC Taiwan.
+• Skema Chips Act AS vs akselerasi teknologi independen Asia.
+• Dampak krisis cip terhadap harga elektronik konsumen dan kedaulatan digital Indonesia.
+
+🔗 SUMBER & RUJUKAN:
+- https://www.asml.com/en/technology
+- https://www.tsmc.com/english
+- Buku 'Chip War' oleh Chris Miller
+
+Tentang Channel:
+Zeinity membahas literasi digital, AI, teknologi, dan ekonomi modern secara tajam dan berbasis fakta. Langganan untuk insight terbaru: @ZeinityShorts
+
+#Zeinity #Semikonduktor #Geopolitik #Teknologi #VideoEssay #AI`,
+    seo_tags: ['semikonduktor', 'perang chip', 'asml', 'tsmc', 'geopolitik', 'kecerdasan buatan', 'teknologi', 'video essay', 'zeinity', 'kedaulatan digital'],
+    pinned_comment_prompt: 'Menurut pandangan analisismu, apakah Indonesia mampu membangun kedaulatan teknologi komputasi lokal, ataukah kita akan selamanya bergantung pada pabrik silikon asing? Tulis pendapatmu di bawah! 👇',
+    thumbnail_hooks: ['PERANG CHIP GLOBAL!', 'MONOPOLI PALING BERBAHAYA', 'DUNIA DALAM ANCAMAN?!'],
+    created_at: '2026-10-08T11:00:00Z',
+    updated_at: '2026-10-10T16:00:00Z',
   },
 ];
 
@@ -165,6 +343,8 @@ export const INITIAL_IDEAS: ContentItem[] = [
     title: 'Apa Itu Fitur Anti Phishing Baru di WhatsApp?',
     pillar: 'Internet & Social Media',
     format: 'Actionable Tip',
+    content_tier: 'short',
+    aspect_ratio: '9:16',
     status: 'Ide',
     priority: 'Tinggi',
     visual_readiness: 'Siap',
@@ -180,6 +360,8 @@ export const INITIAL_IDEAS: ContentItem[] = [
     title: 'Kenapa Algoritma Toko Online Tahu Barang yang Kamu Pikirkan?',
     pillar: 'Digital Economy & Consumer Culture',
     format: 'Quick Breakdown',
+    content_tier: 'short',
+    aspect_ratio: '9:16',
     status: 'Ide',
     priority: 'Sedang',
     visual_readiness: 'Perlu aset',
@@ -195,6 +377,8 @@ export const INITIAL_IDEAS: ContentItem[] = [
     title: 'Bagaimana Cara Mengatur Notifikasi Agar Tidak Mengganggu Tidur?',
     pillar: 'Modern Life & Human Behavior',
     format: 'Actionable Tip',
+    content_tier: 'short',
+    aspect_ratio: '9:16',
     status: 'Ide',
     priority: 'Rendah',
     visual_readiness: 'Siap',
@@ -203,6 +387,40 @@ export const INITIAL_IDEAS: ContentItem[] = [
     notes: 'Tutorial cepat 3 ketukan layar.',
     created_at: '2026-10-08T12:00:00Z',
     updated_at: '2026-10-08T12:00:00Z',
+  },
+  {
+    id: 'zein-i004',
+    type: 'idea',
+    title: 'Bagaimana Model AI Memproses Bahasa Daerah Indonesia?',
+    pillar: 'AI & Technology',
+    format: 'Deep Explainer',
+    content_tier: 'mid',
+    aspect_ratio: '16:9',
+    status: 'Ide',
+    priority: 'Tinggi',
+    visual_readiness: 'Siap',
+    hook: 'Apakah model AI global benar-benar memahami konteks bahasa daerah, atau hanya sekadar terjemahan harfiah kaku?',
+    source_url: 'https://huggingface.co/indonesian-nlp',
+    notes: 'Eksplorasi representasi dataset low-resource language pada model LLM terbuka.',
+    created_at: '2026-10-09T11:00:00Z',
+    updated_at: '2026-10-09T11:00:00Z',
+  },
+  {
+    id: 'zein-i005',
+    type: 'idea',
+    title: 'Bagaimana Kabel Internet Bawah Laut Menopang Ekonomi Global?',
+    pillar: 'Internet & Social Media',
+    format: 'Video Essay',
+    content_tier: 'long',
+    aspect_ratio: '16:9',
+    status: 'Ide',
+    priority: 'Tinggi',
+    visual_readiness: 'Perlu aset',
+    hook: 'Sembilan puluh sembilan persen lalu lintas internet dunia bukan lewat satelit angkasa, melainkan kabel tipis di dasar samudera.',
+    source_url: 'https://www.submarinecablemap.com/',
+    notes: 'Ide video essay geopolitik infrastruktur dasar laut, titik selat Sunda & Malaka, dan kerentanan sabotase jangkar kapal.',
+    created_at: '2026-10-08T16:00:00Z',
+    updated_at: '2026-10-08T16:00:00Z',
   },
 ];
 
@@ -275,6 +493,40 @@ export const INITIAL_RESEARCH_SOURCES: ResearchSource[] = [
     created_at: '2026-10-09T16:00:00Z',
     updated_at: '2026-10-09T16:00:00Z',
   },
+  {
+    id: 'zein-src005',
+    content_id: 'zein-c007',
+    source_title: 'OpenAI Generative Systems & Creative Workflow Research 2026',
+    source_url: 'https://openai.com/research',
+    source_platform: 'OpenAI Research Lab',
+    source_pub_date: '2026-09-30',
+    source_checked_date: '2026-10-09',
+    claim: 'Implementasi alur kerja AI generatif pada agensi kreatif meningkatkan throughput ide awal hingga 400%, namun membutuhkan kontrol kurasi akhir manusia.',
+    evidence_quote: 'Creative professionals utilizing generative assistance shifted their time allocation from manual asset rendering to high-level conceptual direction, maintaining brand alignment through rigorous human-in-the-loop validation.',
+    conclusion: 'Didukung oleh laporan evaluasi efisiensi alur kerja kreatif digital.',
+    verification_status: 'Terverifikasi',
+    is_rumor: false,
+    notes: 'Rujukan valid untuk naskah bab 1 dan bab 3 Mid-Form.',
+    created_at: '2026-10-09T10:00:00Z',
+    updated_at: '2026-10-09T10:00:00Z',
+  },
+  {
+    id: 'zein-src006',
+    content_id: 'zein-c008',
+    source_title: 'ASML Annual Technology Report & TSMC Global Fab Capacity 2026',
+    source_url: 'https://www.asml.com/en/technology',
+    source_platform: 'ASML & TSMC Investor Documentation',
+    source_pub_date: '2026-08-15',
+    source_checked_date: '2026-10-08',
+    claim: 'Lebih dari 90% fabrikasi prosesor logika sub-3 nanometer dunia beroperasi di fasilitas TSMC Taiwan, mengandalkan mesin litografi EUV berdensitas tinggi dari ASML.',
+    evidence_quote: 'Leading-edge semiconductor manufacturing below the 3nm threshold remains concentrated in advanced Taiwanese fabrication facilities, with EUV high-NA systems representing the sole viable commercial path for sub-2nm node volume production.',
+    conclusion: 'Fakta industri terkonfirmasi melalui dokumen resmi ASML dan TSMC.',
+    verification_status: 'Terverifikasi',
+    is_rumor: false,
+    notes: 'Rujukan kredibel untuk naskah Video Essay Long-Form.',
+    created_at: '2026-10-08T12:00:00Z',
+    updated_at: '2026-10-08T12:00:00Z',
+  },
 ];
 
 export const INITIAL_STORYBOARD_SCENES: StoryboardScene[] = [
@@ -346,6 +598,32 @@ export const INITIAL_CHECKLISTS: ProductionChecklist[] = [
     checklist_final: true,
     notes: 'Semua 7 checklist lulus. Siap export master render.',
     updated_at: '2026-10-10T08:00:00Z',
+  },
+  {
+    id: 'chk-007',
+    content_id: 'zein-c007',
+    checklist_voiceover: false,
+    checklist_broll: true,
+    checklist_captions: false,
+    checklist_audio: false,
+    checklist_music: true,
+    checklist_contrast: true,
+    checklist_final: false,
+    notes: 'Naskah Mid-Form siap. Rekaman demo Generative Canvas sudah lengkap di katalog aset.',
+    updated_at: '2026-10-10T14:00:00Z',
+  },
+  {
+    id: 'chk-008',
+    content_id: 'zein-c008',
+    checklist_voiceover: false,
+    checklist_broll: false,
+    checklist_captions: false,
+    checklist_audio: false,
+    checklist_music: false,
+    checklist_contrast: true,
+    checklist_final: false,
+    notes: 'Fase riset Long-Form selesai. Butuh kurasi footage litografi mesin EUV dan grafik peta rantai pasok.',
+    updated_at: '2026-10-10T16:00:00Z',
   },
 ];
 

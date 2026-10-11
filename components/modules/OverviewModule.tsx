@@ -23,6 +23,7 @@ interface OverviewModuleProps {
   onNavigate: (tab: string, itemId?: string) => void;
   onCreateContent: () => void;
   onCreateIdea: () => void;
+  onOpenStudio?: (item: ContentItem) => void;
 }
 
 export function OverviewModule({
@@ -32,6 +33,7 @@ export function OverviewModule({
   onNavigate,
   onCreateContent,
   onCreateIdea,
+  onOpenStudio,
 }: OverviewModuleProps) {
   const risingTrends = trends.filter((t) => t.trend_status === 'Rising');
   const activePipelines = contentItems.filter((c) => c.status !== 'Terbit');
@@ -206,7 +208,16 @@ export function OverviewModule({
                     </span>
                     <span className="text-[11px] text-zmuted">• {item.format}</span>
                   </div>
-                  <h3 className="text-sm font-bold text-zink group-hover:text-zaccent transition-colors">
+                  <h3
+                    onClick={() => {
+                      if (onOpenStudio) {
+                        onOpenStudio(item);
+                      } else {
+                        onNavigate('pipeline', item.id);
+                      }
+                    }}
+                    className="text-sm font-bold text-zink hover:text-zcyan cursor-pointer transition-colors"
+                  >
                     {item.title}
                   </h3>
                   {item.production_due && (
@@ -219,16 +230,17 @@ export function OverviewModule({
 
                 <div className="flex items-center gap-2 self-end sm:self-center">
                   <button
-                    onClick={() => onNavigate('script', item.id)}
-                    className="px-3 py-1.5 rounded-lg bg-zpanel-2 hover:bg-zline/60 border border-zline text-xs font-semibold text-zink transition-colors"
+                    onClick={() => {
+                      if (onOpenStudio) {
+                        onOpenStudio(item);
+                      } else {
+                        onNavigate('pipeline', item.id);
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-zcyan hover:bg-zcyan-hover text-black font-bold text-xs shadow-sm transition-all flex items-center gap-1"
+                    title="Buka Studio Pembuatan Konten (Storyboard & Visual)"
                   >
-                    Script Studio
-                  </button>
-                  <button
-                    onClick={() => onNavigate('production', item.id)}
-                    className="px-3 py-1.5 rounded-lg bg-zcyan/15 hover:bg-zcyan/25 border border-zcyan/30 text-xs font-semibold text-zcyan transition-colors"
-                  >
-                    Safe Zone 9:16
+                    <span>Buka Studio 🎬</span>
                   </button>
                 </div>
               </div>
@@ -337,7 +349,7 @@ export function OverviewModule({
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                <span>Safe Zone 9:16: Teks hanya di area aman tengah 60% (top 15% & bottom 25% terlarang).</span>
+                <span>Komposisi Visual: Rasio adaptif (9:16 vertikal atau 16:9 horizontal) sesuai tier konten.</span>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />

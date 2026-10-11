@@ -1,5 +1,8 @@
 import {
   ContentItem,
+  ContentTier,
+  AspectRatio,
+  ScriptChapter,
   ResearchSource,
   StoryboardScene,
   MediaAsset,
@@ -67,6 +70,47 @@ export function dedupeArrayById<T extends { id?: string }>(items: T[]): T[] {
   return result;
 }
 
+export function normalizeContentItem(item: Partial<ContentItem> & { id?: string }): ContentItem {
+  const content_tier: ContentTier = item.content_tier || 'short';
+  const aspect_ratio: AspectRatio = item.aspect_ratio || (content_tier === 'long' ? '16:9' : '9:16');
+
+  return {
+    id: item.id || generateUniqueId(`zein-${item.type === 'idea' ? 'i' : 'c'}`),
+    type: item.type || 'content',
+    title: item.title || 'Untitled',
+    pillar: item.pillar || 'AI & Technology',
+    format: item.format || 'Quick Breakdown',
+    content_tier,
+    aspect_ratio,
+    status: item.status || 'Ide',
+    priority: item.priority || 'Sedang',
+    visual_readiness: item.visual_readiness || 'Belum dicek',
+    hook: item.hook ?? '',
+    script_hook: item.script_hook ?? '',
+    script_context: item.script_context ?? '',
+    script_payoff: item.script_payoff ?? '',
+    script_ending: item.script_ending ?? '',
+    script_chapters: Array.isArray(item.script_chapters) ? item.script_chapters : [],
+    seo_description: item.seo_description ?? '',
+    seo_tags: Array.isArray(item.seo_tags) ? item.seo_tags : [],
+    pinned_comment_prompt: item.pinned_comment_prompt ?? '',
+    thumbnail_hooks: Array.isArray(item.thumbnail_hooks) ? item.thumbnail_hooks : [],
+    word_count: item.word_count ?? 0,
+    duration_estimate: item.duration_estimate ?? 0,
+    target_wpm: item.target_wpm ?? 145,
+    publish_date: item.publish_date,
+    production_due: item.production_due,
+    source_url: item.source_url ?? '',
+    source: item.source || 'manual',
+    viability_score: item.viability_score,
+    ai_recommended_pillar: item.ai_recommended_pillar,
+    ai_recommended_format: item.ai_recommended_format,
+    is_raw: item.is_raw,
+    notes: item.notes ?? '',
+    created_at: item.created_at || new Date().toISOString(),
+    updated_at: item.updated_at || new Date().toISOString(),
+  };
+}
 
 class StudioStore {
   private contentItems: ContentItem[] = [];
@@ -132,8 +176,8 @@ class StudioStore {
   }
 
   private loadDefaults() {
-    this.contentItems = dedupeArrayById([...INITIAL_CONTENT_ITEMS]);
-    this.ideas = dedupeArrayById([...INITIAL_IDEAS]);
+    this.contentItems = dedupeArrayById([...INITIAL_CONTENT_ITEMS]).map(normalizeContentItem);
+    this.ideas = dedupeArrayById([...INITIAL_IDEAS]).map(normalizeContentItem);
     this.sources = dedupeArrayById([...INITIAL_RESEARCH_SOURCES]);
     this.storyboards = dedupeArrayById([...INITIAL_STORYBOARD_SCENES]);
     this.checklists = dedupeArrayById([...INITIAL_CHECKLISTS]);
@@ -177,8 +221,8 @@ class StudioStore {
         return val ? JSON.parse(val) : null;
       };
 
-      this.contentItems = dedupeArrayById(get('content_items') || [...INITIAL_CONTENT_ITEMS]);
-      this.ideas = dedupeArrayById(get('ideas') || [...INITIAL_IDEAS]);
+      this.contentItems = dedupeArrayById(get('content_items') || [...INITIAL_CONTENT_ITEMS]).map(normalizeContentItem);
+      this.ideas = dedupeArrayById(get('ideas') || [...INITIAL_IDEAS]).map(normalizeContentItem);
       this.sources = dedupeArrayById(get('sources') || [...INITIAL_RESEARCH_SOURCES]);
       this.storyboards = dedupeArrayById(get('storyboards') || [...INITIAL_STORYBOARD_SCENES]);
       this.checklists = dedupeArrayById(get('checklists') || [...INITIAL_CHECKLISTS]);
@@ -259,15 +303,16 @@ class StudioStore {
 
   // --- Content Items & Ideas ---
   public getContentItems(): ContentItem[] {
-    return dedupeArrayById(this.contentItems);
+    return dedupeArrayById(this.contentItems).map(normalizeContentItem);
   }
 
   public getIdeas(): ContentItem[] {
-    return dedupeArrayById(this.ideas);
+    return dedupeArrayById(this.ideas).map(normalizeContentItem);
   }
 
   public getContentById(id: string): ContentItem | undefined {
-    return this.contentItems.find((c) => c.id === id) || this.ideas.find((i) => i.id === id);
+    const found = this.contentItems.find((c) => c.id === id) || this.ideas.find((i) => i.id === id);
+    return found ? normalizeContentItem(found) : undefined;
   }
 
   public saveContentItem(item: Partial<ContentItem> & { id?: string }): ContentItem {
@@ -293,12 +338,19 @@ class StudioStore {
     const existingItem = existingIdx >= 0 ? targetList[existingIdx] : undefined;
     const id = existingItem ? existingItem.id : (item.id || generateUniqueId(`zein-${item.type === 'idea' ? 'i' : 'c'}`));
 
-    const fullItem: ContentItem = {
+    const targetTier: ContentTier = item.content_tier || existingItem?.content_tier || 'short';
+    const targetAspectRatio: AspectRatio = item.aspect_ratio || existingItem?.aspect_ratio || (targetTier === 'long' ? '16:9' : '9:16');
+
+    const fullItem: ContentItem = normalizeContentItem({
+      ...existingItem,
+      ...item,
       id,
       type: item.type || existingItem?.type || 'content',
       title: item.title || existingItem?.title || 'Untitled',
       pillar: item.pillar || existingItem?.pillar || 'AI & Technology',
       format: item.format || existingItem?.format || 'Quick Breakdown',
+      content_tier: targetTier,
+      aspect_ratio: targetAspectRatio,
       status: item.status || existingItem?.status || (item.type === 'idea' ? 'Ide' : 'Ide'),
       priority: item.priority || existingItem?.priority || 'Sedang',
       visual_readiness: item.visual_readiness || existingItem?.visual_readiness || 'Belum dicek',
@@ -307,6 +359,11 @@ class StudioStore {
       script_context: item.script_context ?? existingItem?.script_context ?? '',
       script_payoff: item.script_payoff ?? existingItem?.script_payoff ?? '',
       script_ending: item.script_ending ?? existingItem?.script_ending ?? '',
+      script_chapters: item.script_chapters || existingItem?.script_chapters || [],
+      seo_description: item.seo_description ?? existingItem?.seo_description ?? '',
+      seo_tags: item.seo_tags || existingItem?.seo_tags || [],
+      pinned_comment_prompt: item.pinned_comment_prompt ?? existingItem?.pinned_comment_prompt ?? '',
+      thumbnail_hooks: item.thumbnail_hooks || existingItem?.thumbnail_hooks || [],
       word_count: item.word_count ?? existingItem?.word_count ?? 0,
       duration_estimate: item.duration_estimate ?? existingItem?.duration_estimate ?? 0,
       target_wpm: item.target_wpm ?? existingItem?.target_wpm ?? 145,
@@ -316,7 +373,7 @@ class StudioStore {
       notes: item.notes ?? existingItem?.notes ?? '',
       created_at: item.created_at || existingItem?.created_at || now,
       updated_at: now,
-    };
+    });
 
     if (fullItem.type === 'idea') {
       const idx = existingIdx >= 0 ? existingIdx : this.ideas.findIndex((i) => i.id === id);
@@ -379,13 +436,15 @@ class StudioStore {
     if (ideaIdx === -1) return null;
 
     const idea = this.ideas.splice(ideaIdx, 1)[0];
-    const newContent: ContentItem = {
+    const newContent: ContentItem = normalizeContentItem({
       ...idea,
       id: generateUniqueId('zein-c'),
       type: 'content',
       status: 'Riset',
+      content_tier: idea.content_tier || 'short',
+      aspect_ratio: idea.aspect_ratio || (idea.content_tier === 'long' ? '16:9' : '9:16'),
       updated_at: new Date().toISOString(),
-    };
+    });
 
     this.contentItems.unshift(newContent);
     this.ideas = dedupeArrayById(this.ideas);
@@ -517,6 +576,12 @@ class StudioStore {
         checklist_music: false,
         checklist_contrast: false,
         checklist_final: false,
+        checklist_chapters: false,
+        checklist_thumbnail: false,
+        checklist_seo: false,
+        checklist_lufs: false,
+        checklist_pacing: false,
+        checklist_hook_retention: false,
         updated_at: new Date().toISOString(),
       };
       this.checklists.push(chk);
@@ -931,11 +996,13 @@ class StudioStore {
       version_number: versionNumber,
       title: version.title || 'Untitled Script Version',
       format: version.format || 'Quick Breakdown',
+      content_tier: version.content_tier,
       target_wpm: version.target_wpm || 145,
       script_hook: version.script_hook || '',
       script_context: version.script_context || '',
       script_payoff: version.script_payoff || '',
       script_ending: version.script_ending || '',
+      script_chapters: Array.isArray(version.script_chapters) ? version.script_chapters : undefined,
       word_count: version.word_count || 0,
       duration_estimate: version.duration_estimate || 0,
       is_active: isActive,
@@ -975,11 +1042,13 @@ class StudioStore {
         ...content,
         title: version.title,
         format: version.format,
+        content_tier: version.content_tier || content.content_tier,
         target_wpm: version.target_wpm,
         script_hook: version.script_hook,
         script_context: version.script_context,
         script_payoff: version.script_payoff,
         script_ending: version.script_ending,
+        script_chapters: version.script_chapters || content.script_chapters,
         word_count: version.word_count,
         duration_estimate: version.duration_estimate,
       });
@@ -1001,7 +1070,8 @@ class StudioStore {
         const localContentMap = new Map(this.contentItems.map((c, i) => [c.id, { item: c, index: i }]));
         const localIdeaMap = new Map(this.ideas.map((c, i) => [c.id, { item: c, index: i }]));
 
-        for (const item of remoteItems) {
+        for (const rawItem of remoteItems) {
+          const item = normalizeContentItem(rawItem);
           if (item.type === 'idea') {
             const existing = localIdeaMap.get(item.id);
             if (existing) {

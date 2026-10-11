@@ -7,11 +7,31 @@ export type Pillar =
   | 'Gaming & Digital Entertainment'
   | 'Modern Life & Human Behavior';
 
+export type ContentTier = 'short' | 'mid' | 'long';
+export type AspectRatio = '9:16' | '16:9';
+
+export interface ScriptChapter {
+  id: string;
+  chapter_number: number;
+  title: string;
+  timestamp_estimate?: string; // e.g. "01:30"
+  content: string;
+  word_count: number;
+}
+
 export type VideoFormat =
   | 'Flash News'
   | 'Quick Breakdown'
   | 'Actionable Tip'
-  | 'Myth Buster';
+  | 'Myth Buster'
+  | 'Deep Explainer'
+  | 'Mini Tutorial'
+  | 'Case Breakdown'
+  | 'Video Essay'
+  | 'Masterclass'
+  | 'Case Investigation'
+  | 'Ecosystem Review'
+  | (string & {});
 
 export type EditorialStatus =
   | 'Ide'
@@ -53,6 +73,8 @@ export interface ContentItem {
   title: string;
   pillar: Pillar;
   format: VideoFormat;
+  content_tier?: ContentTier;
+  aspect_ratio?: AspectRatio;
   status: EditorialStatus;
   priority: Priority;
   visual_readiness: VisualReadiness;
@@ -61,6 +83,11 @@ export interface ContentItem {
   script_context?: string;
   script_payoff?: string;
   script_ending?: string;
+  script_chapters?: ScriptChapter[];
+  seo_description?: string;
+  seo_tags?: string[];
+  pinned_comment_prompt?: string;
+  thumbnail_hooks?: string[];
   word_count?: number;
   duration_estimate?: number;
   target_wpm?: number;
@@ -101,11 +128,13 @@ export interface ScriptVersion {
   version_number: number;
   title: string;
   format: VideoFormat;
+  content_tier?: ContentTier;
   target_wpm: number;
   script_hook: string;
   script_context: string;
   script_payoff: string;
   script_ending: string;
+  script_chapters?: ScriptChapter[];
   word_count: number;
   duration_estimate: number;
   is_active: boolean;
@@ -148,6 +177,13 @@ export interface ProductionChecklist {
   checklist_music: boolean;
   checklist_contrast: boolean;
   checklist_final: boolean;
+  // Multi-format additions (Mid/Long-Form)
+  checklist_chapters?: boolean;
+  checklist_thumbnail?: boolean;
+  checklist_seo?: boolean;
+  checklist_lufs?: boolean;
+  checklist_pacing?: boolean;
+  checklist_hook_retention?: boolean;
   last_checked_at?: string;
   notes?: string;
   updated_at: string;

@@ -6,11 +6,11 @@ import { studioStore } from '../../lib/storage';
 import { useToast } from '../ToastContainer';
 import { TitleValidatorBar } from '../TitleValidatorBar';
 import { WpmMeter } from '../WpmMeter';
-import { TeleprompterModal } from '../TeleprompterModal';
 import {
   exportToPlainText,
   exportToCapCutSegments,
   exportToSrt,
+  exportCleanNarrationForTts,
 } from '../../lib/export-utils';
 import { autoSplitRawScript } from '../../lib/validator';
 import { generateWithTaskRouter } from '../../lib/ai-service';
@@ -65,7 +65,6 @@ export function ScriptStudioModule({
 
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiOutput, setAiOutput] = useState<string | null>(null);
-  const [isTeleprompterOpen, setIsTeleprompterOpen] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
   const [rawPastedScript, setRawPastedScript] = useState('');
@@ -511,14 +510,6 @@ export function ScriptStudioModule({
             <History className="w-3.5 h-3.5 text-zaccent" />
             <span>Revisi ({versions.length})</span>
           </button>
-
-          <button
-            onClick={() => setIsTeleprompterOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zcyan hover:bg-zcyan-hover text-black font-bold text-xs shadow-md transition-colors"
-          >
-            <Eye className="w-3.5 h-3.5" />
-            Teleprompter
-          </button>
         </div>
       </div>
 
@@ -862,10 +853,22 @@ export function ScriptStudioModule({
                 Plain Text (.txt)
               </button>
               <button
-                onClick={() => setIsTeleprompterOpen(true)}
-                className="p-2.5 rounded-xl bg-zpanel-2 hover:bg-zline/60 border border-zline font-semibold text-zcyan transition-colors text-center"
+                onClick={() => {
+                  const cleanText = exportCleanNarrationForTts({
+                    ...activeItem,
+                    title,
+                    format,
+                    script_hook: hook,
+                    script_context: context,
+                    script_payoff: payoff,
+                    script_ending: ending,
+                  });
+                  navigator.clipboard.writeText(cleanText);
+                  showToast('Narasi bersih disalin untuk Kaggle TTS!', 'success');
+                }}
+                className="p-2.5 rounded-xl bg-zpanel-2 hover:bg-zline/60 border border-zline font-semibold text-zaccent transition-colors text-center"
               >
-                Teleprompter View
+                Kaggle TTS (.txt)
               </button>
               <button
                 onClick={handleExportCapCut}
@@ -883,22 +886,6 @@ export function ScriptStudioModule({
           </div>
         </div>
       </div>
-
-      {/* Full-screen Teleprompter Modal */}
-      <TeleprompterModal
-        item={{
-          ...activeItem,
-          title,
-          format,
-          target_wpm: targetWpm,
-          script_hook: hook,
-          script_context: context,
-          script_payoff: payoff,
-          script_ending: ending,
-        }}
-        isOpen={isTeleprompterOpen}
-        onClose={() => setIsTeleprompterOpen(false)}
-      />
 
       {/* Auto-Split Raw Script Modal */}
       {isSplitModalOpen && (

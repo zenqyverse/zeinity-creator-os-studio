@@ -1,4 +1,4 @@
-import { VideoFormat } from './types';
+import { ContentTier, VideoFormat, ScriptChapter } from './types';
 
 export interface TitleValidationResult {
   isValid: boolean;
@@ -17,9 +17,9 @@ export function validateTitle(title?: string | null): TitleValidationResult {
   const words = trimmed.split(/\s+/).filter(Boolean);
   const wordCount = words.length;
 
-  const startsWithQuestionWord = /^(Apa|Kenapa|Bagaimana)\b/i.test(trimmed);
+  const startsWithQuestionWord = /^(Apa(kah)?|Kenapa|Bagaimana)\b/i.test(trimmed);
   const validWordRange = wordCount >= 5 && wordCount <= 10;
-  const endsWithQuestionMark = /\?\s*$/.test(trimmed);
+  const endsWithQuestionMark = /[?？]\s*$/.test(trimmed);
 
   const errors: string[] = [];
   const suggestions: string[] = [];
@@ -28,11 +28,7 @@ export function validateTitle(title?: string | null): TitleValidationResult {
     errors.push('Judul tidak boleh kosong.');
     suggestions.push('Gunakan formula: Kata tanya ("Apa"/"Kenapa"/"Bagaimana") + subjek + tanda tanya (?)');
   } else {
-    if (!startsWithQuestionWord) {
-      errors.push('Wajib diawali kata tanya: "Apa", "Kenapa", atau "Bagaimana".');
-      suggestions.push(`Coba: "Apa Dampak ${trimmed}?" atau "Kenapa ${trimmed}?"`);
-    }
-
+    // Word count is strictly 5–10 words (blocking error)
     if (wordCount < 5) {
       errors.push(`Judul terlalu pendek (${wordCount} kata). Batas ideal: 5–10 kata.`);
       suggestions.push('Tambahkan konteks platform atau subjek spesifik agar mencapai minimal 5 kata.');
@@ -41,9 +37,14 @@ export function validateTitle(title?: string | null): TitleValidationResult {
       suggestions.push('Pangkas kata sambung atau keterangan yang tidak esensial untuk layar mobile.');
     }
 
+    // Question word is a friendly suggestion/tip (non-blocking)
+    if (!startsWithQuestionWord) {
+      suggestions.push(`Disarankan diawali kata tanya ("Apa", "Kenapa", atau "Bagaimana") untuk memancing rasa penasaran.`);
+    }
+
+    // Trailing question mark is a friendly suggestion/tip (non-blocking)
     if (!endsWithQuestionMark) {
-      errors.push('Wajib diakhiri tanda tanya ("?").');
-      suggestions.push('Tambahkan tanda tanya di akhir kalimat.');
+      suggestions.push('Disarankan diakhiri tanda tanya ("?") jika menggunakan formula pertanyaan.');
     }
   }
 
@@ -60,12 +61,99 @@ export function validateTitle(title?: string | null): TitleValidationResult {
   };
 }
 
+export interface TierDurationRange {
+  min: number;
+  max: number;
+  wordMin: number;
+  wordMax: number;
+  minDuration?: number;
+  maxDuration?: number;
+  minWords?: number;
+  maxWords?: number;
+  label: string;
+}
+
+export const TIER_DURATION_RANGES: Record<ContentTier, TierDurationRange> = {
+  short: {
+    min: 20,
+    max: 60,
+    wordMin: 50,
+    wordMax: 140,
+    minDuration: 20,
+    maxDuration: 60,
+    minWords: 50,
+    maxWords: 140,
+    label: '20–60 detik (Shorts)',
+  },
+  mid: {
+    min: 60,
+    max: 180,
+    wordMin: 150,
+    wordMax: 450,
+    minDuration: 60,
+    maxDuration: 180,
+    minWords: 150,
+    maxWords: 450,
+    label: '1–3 menit (Mid-Form)',
+  },
+  long: {
+    min: 300,
+    max: 480,
+    wordMin: 700,
+    wordMax: 1250,
+    minDuration: 300,
+    maxDuration: 480,
+    minWords: 700,
+    maxWords: 1250,
+    label: '5–8 menit (Long-Form)',
+  },
+};
+
+export const FORMAT_DURATION_RANGES: Record<string, { min: number; max: number; label: string; wordMin: number; wordMax: number }> = {
+  'Flash News': { min: 20, max: 30, label: '20–30 detik', wordMin: 50, wordMax: 75 },
+  'Quick Breakdown': { min: 30, max: 45, label: '30–45 detik', wordMin: 75, wordMax: 110 },
+  'Myth Buster': { min: 30, max: 45, label: '30–45 detik', wordMin: 75, wordMax: 110 },
+  'Actionable Tip': { min: 45, max: 60, label: '45–60 detik', wordMin: 110, wordMax: 140 },
+  'Deep Explainer': { min: 60, max: 180, label: '1–3 menit', wordMin: 150, wordMax: 450 },
+  'Mini Tutorial': { min: 60, max: 180, label: '1–3 menit', wordMin: 150, wordMax: 450 },
+  'Case Breakdown': { min: 60, max: 180, label: '1–3 menit', wordMin: 150, wordMax: 450 },
+  'Video Essay': { min: 300, max: 480, label: '5–8 menit', wordMin: 700, wordMax: 1250 },
+  'Masterclass': { min: 300, max: 480, label: '5–8 menit', wordMin: 700, wordMax: 1250 },
+  'Case Investigation': { min: 300, max: 480, label: '5–8 menit', wordMin: 700, wordMax: 1250 },
+  'Ecosystem Review': { min: 300, max: 480, label: '5–8 menit', wordMin: 700, wordMax: 1250 },
+};
+
+export function inferTierFromFormat(format?: string): ContentTier {
+  if (!format) return 'short';
+  const f = format.toLowerCase();
+  if (
+    f.includes('essay') ||
+    f.includes('masterclass') ||
+    f.includes('investigation') ||
+    f.includes('ecosystem') ||
+    f.includes('long')
+  ) {
+    return 'long';
+  }
+  if (
+    f.includes('explainer') ||
+    f.includes('tutorial') ||
+    f.includes('case') ||
+    f.includes('mid')
+  ) {
+    return 'mid';
+  }
+  return 'short';
+}
+
 export interface ScriptEconomyResult {
   totalWords: number;
   estimatedSeconds: number;
   wpm: number;
   isWordCountSafe: boolean;
   isDurationSafe: boolean;
+  tier?: ContentTier;
+  tierTarget?: TierDurationRange;
   formatTargetSeconds: { min: number; max: number; label: string; wordMin?: number; wordMax?: number };
   formatCompliance: 'Optimal' | 'Terlalu Singkat' | 'Terlalu Panjang';
   breakdown: {
@@ -76,20 +164,14 @@ export interface ScriptEconomyResult {
   };
 }
 
-export const FORMAT_DURATION_RANGES: Record<VideoFormat, { min: number; max: number; label: string; wordMin: number; wordMax: number }> = {
-  'Flash News': { min: 20, max: 30, label: '20–30 detik', wordMin: 50, wordMax: 75 },
-  'Quick Breakdown': { min: 30, max: 45, label: '30–45 detik', wordMin: 75, wordMax: 110 },
-  'Myth Buster': { min: 30, max: 45, label: '30–45 detik', wordMin: 75, wordMax: 110 },
-  'Actionable Tip': { min: 45, max: 60, label: '45–60 detik', wordMin: 110, wordMax: 140 },
-};
-
 export function calculateScriptEconomy(
   hook?: string | null,
   context?: string | null,
   payoff?: string | null,
   ending?: string | null,
   format: VideoFormat = 'Quick Breakdown',
-  targetWpm: number = 145
+  targetWpm: number = 145,
+  tier?: ContentTier
 ): ScriptEconomyResult {
   const countWords = (t?: string | null) => (t || '').trim().split(/\s+/).filter(Boolean).length;
 
@@ -102,10 +184,24 @@ export function calculateScriptEconomy(
   const wpm = Math.max(130, Math.min(160, targetWpm || 145));
   const estimatedSeconds = Math.round((totalWords / wpm) * 60 * 10) / 10;
 
-  const formatRange = FORMAT_DURATION_RANGES[format] || { min: 20, max: 60, label: '20–60 detik', wordMin: 90, wordMax: 140 };
+  const activeTier: ContentTier = tier || inferTierFromFormat(format);
+  const tierTarget = TIER_DURATION_RANGES[activeTier] || TIER_DURATION_RANGES.short;
+
+  const matchedFormatRange = format ? FORMAT_DURATION_RANGES[format] : undefined;
+  const isFormatCompatibleWithTier = matchedFormatRange && inferTierFromFormat(format) === activeTier;
+
+  const formatRange = isFormatCompatibleWithTier
+    ? matchedFormatRange
+    : {
+        min: tierTarget.min,
+        max: tierTarget.max,
+        label: tierTarget.label,
+        wordMin: tierTarget.wordMin,
+        wordMax: tierTarget.wordMax,
+      };
 
   const isWordCountSafe = totalWords >= formatRange.wordMin && totalWords <= formatRange.wordMax;
-  const isDurationSafe = estimatedSeconds <= 60;
+  const isDurationSafe = estimatedSeconds <= tierTarget.max;
 
   let formatCompliance: 'Optimal' | 'Terlalu Singkat' | 'Terlalu Panjang' = 'Optimal';
   if (totalWords < formatRange.wordMin) {
@@ -120,12 +216,76 @@ export function calculateScriptEconomy(
     wpm,
     isWordCountSafe,
     isDurationSafe,
+    tier: activeTier,
+    tierTarget,
     formatTargetSeconds: formatRange,
     formatCompliance,
     breakdown: {
       hookWords,
       contextWords,
       payoffWords,
+      endingWords,
+    },
+  };
+}
+
+export function calculateChaptersScriptEconomy(
+  chapters: ScriptChapter[] = [],
+  format: VideoFormat = 'Deep Explainer',
+  targetWpm: number = 145,
+  tier?: ContentTier,
+  hook?: string | null,
+  ending?: string | null
+): ScriptEconomyResult {
+  const countWords = (t?: string | null) => (t || '').trim().split(/\s+/).filter(Boolean).length;
+  const hookWords = countWords(hook);
+  const endingWords = countWords(ending);
+  const chaptersWords = chapters.reduce((sum, ch) => sum + (ch.word_count || countWords(ch.content)), 0);
+  const totalWords = hookWords + chaptersWords + endingWords;
+
+  const wpm = Math.max(130, Math.min(160, targetWpm || 145));
+  const estimatedSeconds = Math.round((totalWords / wpm) * 60 * 10) / 10;
+
+  const activeTier: ContentTier = tier || inferTierFromFormat(format);
+  const tierTarget = TIER_DURATION_RANGES[activeTier] || TIER_DURATION_RANGES.mid;
+
+  const matchedFormatRange = format ? FORMAT_DURATION_RANGES[format] : undefined;
+  const isFormatCompatibleWithTier = matchedFormatRange && inferTierFromFormat(format) === activeTier;
+
+  const formatRange = isFormatCompatibleWithTier
+    ? matchedFormatRange
+    : {
+        min: tierTarget.min,
+        max: tierTarget.max,
+        label: tierTarget.label,
+        wordMin: tierTarget.wordMin,
+        wordMax: tierTarget.wordMax,
+      };
+
+  const isWordCountSafe = totalWords >= formatRange.wordMin && totalWords <= formatRange.wordMax;
+  const isDurationSafe = estimatedSeconds <= tierTarget.max;
+
+  let formatCompliance: 'Optimal' | 'Terlalu Singkat' | 'Terlalu Panjang' = 'Optimal';
+  if (totalWords < formatRange.wordMin) {
+    formatCompliance = 'Terlalu Singkat';
+  } else if (totalWords > formatRange.wordMax) {
+    formatCompliance = 'Terlalu Panjang';
+  }
+
+  return {
+    totalWords,
+    estimatedSeconds,
+    wpm,
+    isWordCountSafe,
+    isDurationSafe,
+    tier: activeTier,
+    tierTarget,
+    formatTargetSeconds: formatRange,
+    formatCompliance,
+    breakdown: {
+      hookWords,
+      contextWords: 0,
+      payoffWords: chaptersWords,
       endingWords,
     },
   };

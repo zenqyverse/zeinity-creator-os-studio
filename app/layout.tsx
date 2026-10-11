@@ -3,6 +3,7 @@ import './globals.css';
 import { ToastProvider } from '../components/ToastContainer';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://zeinity.app'),
   title: 'Zeinity Creator Studio — YouTube Shorts Operating System',
   description: 'Pusat komando produksi YouTube Shorts berbasis riset dan standar editorial terverifikasi kanal Zeinity (@ZeinityShorts).',
   icons: {

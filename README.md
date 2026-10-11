@@ -1,4 +1,4 @@
-# Zeinity Creator Studio OS (v2.0)
+# Zeinity Creator Studio OS (v3.0 — Multi-Format Edition)
 
 <p align="center">
   <img src="./public/banner.png" alt="Zeinity Creator Studio Banner" width="100%" />
@@ -7,9 +7,9 @@
 <p align="center">
   <img src="./public/logo.png" alt="Zeinity Logo" width="72" height="72" />
   <br />
-  <strong>Pusat Komando Produksi YouTube Shorts Terverifikasi untuk Kanal @ZeinityShorts</strong>
+  <strong>Pusat Komando Produksi Konten Multi-Format Terverifikasi untuk Kanal @ZeinityShorts</strong>
   <br />
-  <em>Research-backed • High APV Retention • Dynamic Script Economy • Autonomous AI Grounding</em>
+  <em>Shorts (<60s) • Mid-Form (1–3m) • Long-Form (5–8m) • Pipeline-Centric Hub • Dynamic Chapters • AI Voice Cloning TTS Ready</em>
 </p>
 
 <p align="center">
@@ -23,89 +23,81 @@
 
 ---
 
-## 📌 Ringkasan & Filosofi Editorial
+## 📌 Ringkasan & Filosofi Multi-Format (v3.0)
 
-**Zeinity Creator Studio OS** adalah sistem operasi produksi konten YouTube Shorts yang dirancang khusus untuk memenuhi standar ketat kanal **@ZeinityShorts**. Kanal ini berfokus pada teknologi, kecerdasan buatan (AI), software, gadget, dan dev tools dengan ritme tayang disiplin: **3 Shorts per minggu (Senin, Kamis, Minggu pukul 07:00 WIB)**.
+**Zeinity Creator Studio OS** adalah sistem operasi produksi konten terpadu yang dirancang khusus untuk memenuhi standar ketat kanal **@ZeinityShorts**. Pada versi **v3.0 (Multi-Format Edition)**, studio ini memperluas kapasitas produksinya dari yang sebelumnya eksklusif video pendek vertikal menjadi sistem multi-format 3 tingkat guna membuka potensi monetisasi penuh pada program kemitraan YouTube (YPP):
 
-Sistem ini memastikan setiap video yang diproduksi tidak hanya menarik perhatian pada 3 detik pertama (*Hook*), namun juga memiliki **akurasi data faktual terverifikasi**, struktur naskah yang padat tanpa celah *fluff*, dan rasio retensi pemirsa (*Audience Retention / APV*) yang optimal antara **90%–110%**.
+| Tingkat Konten (Tier) | Rentang Durasi | Rasio Aspek | Alokasi Kata (WPM 145) | Peran Strategis |
+| :--- | :--- | :--- | :--- | :--- |
+| **Tier 1: Shorts** | 20 – 60 Detik | 9:16 Vertikal | 50 – 140 Kata | Jangkauan penonton baru & pertumbuhan subscriber |
+| **Tier 2: Mid-Form** | 1 – 3 Menit | 9:16 / 16:9 Fleksibel | 150 – 450 Kata | Keseimbangan retensi tinggi & kelayakan iklan |
+| **Tier 3: Long-Form** | 5 – 8 Menit | 16:9 Horizontal | 700 – 1.250 Kata | Optimalisasi CPM/RPM tinggi & pendapatan iklan reguler (YPP) |
+
+Sistem ini memastikan setiap video memiliki **akurasi data faktual terverifikasi**, struktur naskah berbobot, kemasan visual bersinergi (*high CTR*), dan alur ekspor suara instan ke notebook AI Voice Cloning (Kaggle).
 
 ---
 
-## 🚀 Fitur Unggulan & Arsitektur Sistem
+## 🚀 Fitur Unggulan & Arsitektur Terpadu
 
-### 1. Overview Command Center & Daily Action Focus
-* **Daily Action Focus Banner**: Algoritma cerdas yang mendeteksi tugas paling kritis hari ini (misal: naskah belum selesai menjelang jadwal rilis terdekat).
-* **Snapshot Matrik Studio**: Ringkasan pipeline aktif, naskah dalam pengerjaan, ide mentah yang perlu kurasi, dan sinyal radar tren.
-* **Header Identitas Kanal**: Dilengkapi banner dan avatar resmi Zeinity.
+### 1. Content Pipeline (Pusat Kendali Proyek Terpadu)
+* **Segmented Tier Filter Tabs**: Filter cepat satu klik antara `[Semua]`, `[Shorts (<60s)]`, `[Mid-Form (1–3m)]`, dan `[Long-Form (5–8m)]`.
+* **Tabel List View Rapi & Bebas Clutter**: Menghilangkan deretan tombol yang berjejal; kini hanya menampilkan tombol utama **"Buka Studio 🎬"**, tombol **"Majukan →"**, dan menu popover tiga titik (`···`).
+* **Menu Popover Aksi Sekunder (`···`)**:
+  * **Duplikasi Konten (Part 2/3)**: Algoritma penomoran serial otomatis cerdas (`(Part 2)`, `(Part 3)`, dst.) tanpa menimpa data awal.
+  * **Salin Narasi Bersih (Kaggle TTS)**: Menyalin teks narasi bersih bebas instruksi B-roll dalam 1-klik, siap tempel ke Kaggle Notebook AI Voice Cloning.
+  * **Hapus Konten**: Dengan konfirmasi dialog aman.
+* **Kanban Board Interaktif**: Klik langsung pada kartu Kanban membuka Modal Studio Terpadu, dengan isolasi drag-and-drop yang aman.
 
-### 2. Content Pipeline (Dual View & Deteksi Kanibalisasi)
-* **Tampilan Fleksibel**: Beralih instan antara **Tabel Berstruktur** (dengan sorting kolom judul, format, status, deadline, dan target tayang) dan **Papan Kanban Interaktif** (8 tahapan editorial dari *Ide* hingga *Terbit*).
-* **Topic Cannibalization Detector**: Menggunakan perhitungan *Jaccard Similarity* dengan pemfilteran kata henti (*stop-words*) Bahasa Indonesia untuk mencegah topik ganda atau berulang (>70% kemiripan).
-* **Indikator SLA Overdue**: Peringatan visual jika proses produksi melebihi batas waktu deadline jadwal rilis.
-* **Aksi Sekali Klik**: Duplikasi naskah instan (Part 2), lompat langsung ke Script Studio, Research, atau Production Studio.
+### 2. Modal Studio Terpadu (Unified Studio Modal — 95vw)
+Pusat eksekusi konten layar lebar (`w-[95vw] max-w-7xl h-[90vh]`) yang mengintegrasikan seluruh studio langsung di dalam Pipeline:
+* **Header Pintar**: Judul dengan inline validation, status editorial Kanban saat ini, tombol 1-klik *"Majukan Status →"*, indikator total kata dan estimasi durasi waktu bicara, serta proteksi *Rapid-Close* (mencegah data hilang jika modal ditutup mendadak).
+* **Tab 1: Naskah Studio**:
+  * **Mode 4 Panggung (Shorts)**: Hook (0–3s), Konteks (4–10s), Payoff (11–45s), dan Seamless Loop (46–60s).
+  * **Mode Bab Dinamis (Mid & Long-Form)**: Visual Hook, daftar bab fleksibel dengan estimasi timestamp otomatis (misal `⏱️ 01:25`), hitungan kata per bab, tombol geser urutan (↑/↓), tombol hapus, dan outro penutup.
+  * **WPM Pacing Meter Dinamis**: Rentang kata otomatis menyesuaikan tier aktif.
+  * **Tombol Ekspor Kaggle TTS**: Menyalin teks narasi murni siap olah di Kaggle Notebook.
+  * **Riwayat Versi (Snapshot Restore)**: Simpan dan pulihkan revisi naskah kapan saja.
+* **Tab 2: Packaging, SEO & Thumbnail Lab**:
+  * **Auto YouTube Chapters / Timestamps**: Otomatis dihitung dari kata per bab dan tempo WPM (`00:00 Intro: ...`, `01:25 ...`) dengan proteksi sanitasi baris.
+  * **Generator Deskripsi SEO YouTube**: Paragraf pembuka, daftar timestamps, ringkasan pembahasan, tautan rujukan, dan hashtag siap salin.
+  * **10 Tag Rekomendasi YouTube**: Kata kunci relevan bebas duplikasi tanda pagar (`#`).
+  * **Pinned Comment Engagement Prompt**: Pertanyaan interaktif pemantik diskusi di kolom komentar.
+  * **Thumbnail Hook & A/B Concept Lab**: 3 konsep teks gambar yang bersinergi dengan judul, dilengkapi simulator kartu YouTube feed (*Desktop View* vs *Mobile View*) untuk menguji rasio klik (CTR).
+* **Tab 3: Metadata & Checklist**:
+  * Pilar konten, sub-format dinamis per tier + opsi kustom.
+  * **Smart Schedule 1-Klik**: Preset waktu lokal bebas bug timezone (*Shorts: 07:00 WIB* vs *Long-Form: Sabtu 19:00 WIB*).
+  * **Checklist Pra-Upload Adaptif**: Poin checklist menyesuaikan secara otomatis mengikuti tier konten.
 
-### 3. Bank Ide & Triage Gate (Multi-Channel Ingestion)
-* **Inbox Ide Mentah vs. Backlog Terkurasi**: Gerbang seleksi terpisah agar ide spontan tidak mencemari pipeline resmi.
-* **Telegram Bot Ingestion Gateway**: Kirim ide, catatan, tautan berita, atau tangkapan layar langsung dari Telegram ke studio via webhook aman (`/idea`, `/status`, `/ping`).
-* **Universal REST API Ingest**: Endpoint terproteksi token (`/api/ingest/idea`) untuk otomasi Apple Shortcuts, ekstensi browser, atau n8n.
-* **Shorts Viability Score (0–100)**: Penilaian kelayakan format Shorts (20–60 detik) otomatis berbasis AI dan heuristik lokal.
-* **Batch Action**: Seleksi multi-ide untuk diloloskan ke pipeline atau dihapus sekaligus.
+### 3. Title Validator yang Direlaksasi
+* **Aturan Mutlak**: Panjang judul wajib **5–10 kata** (mencegah judul terpotong di antarmuka perangkat mobile YouTube).
+* **Aturan Rekomendasi**: Kata tanya (*Apa/Apakah/Kenapa/Bagaimana*) dan tanda tanya (*?*) kini berstatus sebagai **rekomendasi ramah**, tidak lagi memblokir status kelulusan judul.
 
-### 4. Script Studio & Dynamic Pace Meter
-* **Dynamic Script Economy**: Kalibrasi kata aman disesuaikan otomatis dengan format video pada kecepatan rata-rata ~145 kata per menit (WPM):
-  * **Flash News (20–30s)**: 50–75 kata
-  * **Quick Breakdown (30–45s)**: 75–110 kata
-  * **Myth Buster (30–45s)**: 75–110 kata
-  * **Actionable Tip (45–60s)**: 110–140 kata
-* **Title Validator Bar**: Standar baku judul Zeinity (format pertanyaan: *Apa / Kenapa / Bagaimana*, 5–10 kata, diakhiri tanda tanya `?`).
-* **AI Script Tightener ("Pangkas Kata")**: Memotong kalimat bertele-tele agar sesuai alokasi durasi tanpa mengurangi substansi teknis.
-* **Generator Judul & Seamless Loop**: Otomasi pembuatan kalimat penutup yang menyambung mulus ke kalimat pembuka (*infinite loop*).
-* **Riwayat Versi (Snapshot Restore)**: Pemulihan draft naskah sebelumnya kapan saja.
-* **Multi-Format Export**: Ekspor satu klik ke Plain Text, SRT Subtitle bertanda waktu, dan Segmen CapCut.
+### 4. Perampingan Navigasi Sidebar (9 Hub Inti)
+Menu *Script Studio* dan *Production Studio* telah dilebur ke dalam Modal Terpadu di Pipeline, merampingkan sidebar menjadi 9 hub:
+1. `Overview` (Command Center & Daily Focus)
+2. `Content Pipeline` (Pusat Kendali Proyek Multi-Format)
+3. `Radar Tren` (YouTube Data API v3 & Tech RSS)
+4. `Idea Bank` (Triage Ide Mentah & Skor Kelayakan Konten)
+5. `Calendar` (Slot Publikasi Terpisah Shorts 07:00 / Long-Form 19:00 WIB)
+6. `Research & Fact Check` (Gemini Grounding & Scraper)
+7. `Asset Library` (Manajemen Media & B-Roll)
+8. `Analytics & Learning` (Evaluasi Metrik & Benchmark Retensi)
+9. `AI Settings` (BYOK Multi-Provider AI)
 
-### 5. Research Studio & Fact-Checking Engine
-* **Web Scraper & Metadata Extractor**: Ekstraksi otomatis konten dan tanggal publikasi dari URL rilis resmi menggunakan *Cheerio*.
-* **Gemini Google Search Grounding**: Verifikasi klaim dengan pencarian web langsung dan sitasi sumber asli.
-* **1-Click Push to Script Payoff**: Suntikkan kutipan bukti faktual langsung ke bagian *Payoff* naskah konten terkait.
-* **Stale Fact Warning**: Peringatan badge kuning jika sumber berita berusia lebih dari 6 bulan.
-
-### 6. Production Studio (Storyboard & Voiceover Guidance)
-* **Scene Director**: Pemecahan naskah menjadi adegan visual terurut (durasi, deskripsi visual, teks on-screen, dan panduan audio).
-* **Visual Readiness Checklist**: Status kesiapan aset (*Siap*, *Perlu Aset*, *Belum Dicek*).
-* **Integrasi Voiceover**: Panduan WPM dan catatan intonasi untuk alur rekaman suara.
-
-### 7. Radar Tren (YouTube & Tech RSS)
-* **YouTube Data API v3**: Memantau tren video teknologi terpopuler di Indonesia secara live.
-* **Curated Tech Feeds**: Fallback kurasi berita AI, developer tools, dan hardware terkini.
-* **1-Click Import**: Langsung ubah tren menjadi kartu riset atau ide konten baru.
-
-### 8. Analytics & Learning Hub
-* **Sinkronisasi YouTube Channel**: Tarik metrik tayang, rasio bertahan nonton (*Stayed to Watch / APV*), dan persentase *Viewed vs Swiped Away*.
-* **Benchmark Status Pills**: Evaluasi otomatis terhadap target Zeinity (APV 90–110%, Viewed $\ge$ 70%).
-* **Smart Experiment Engine**: Menganalisis korelasi gaya pembuka (*Hook*) dan format naskah terhadap retensi tertinggi.
-
-### 9. macOS Live Diagnostic Terminal Dock (Ctrl+\`)
-* **Terminal Mengambang**: Tampilan jendela bergaya macOS Terminal dengan 3 tombol kontrol lampu lalu lintas.
-* **Humanized Root-Cause Parser**: Menerjemahkan pesan galat teknis menjadi penjelasan Bahasa Indonesia dalam 3 poin:
-  1. *Apa yang terjadi*
-  2. *Akar masalah sebenarnya*
-  3. *Langkah solusi konkret*
-* **Tes Kesehatan Sistem (1-Click Self Test)**: Evaluasi status koneksi Supabase, YouTube API, AI provider, dan LocalStorage secara instan.
-
-### 10. Navigasi & Auto-Scroll Pintar
-* **Auto-Scroll to Top**: Layar otomatis menggulir halus (*smooth scroll*) ke puncak setiap kali berganti tab utama, memilih naskah video, menutup modal formulir, atau beralih sub-tampilan.
-* **Tombol Cepat "Ke Atas"**: Tombol mengambang elegan di pojok kanan bawah yang aktif saat halaman digulir melebihi 240px.
+### 5. macOS Live Diagnostic Terminal Dock (`Ctrl + \``)
+* Terminal mengambang bergaya macOS untuk inspeksi kesehatan sistem real-time.
+* **Humanized Root-Cause Parser**: Menjelaskan error dalam Bahasa Indonesia (apa yang terjadi, akar masalah, dan solusi konkret).
 
 ---
 
 ## 🛠️ Tech Stack & Dependensi
 
-* **Frontend Framework**: Next.js 15 (App Router), React 19, TypeScript
-* **Styling**: Tailwind CSS, Lucide React Icons
+* **Frontend Framework**: Next.js 15 (App Router), React 19, TypeScript 5
+* **Styling**: Tailwind CSS 3.4, Lucide React Icons
 * **Cloud & Basis Data**: Supabase PostgreSQL, Supabase Realtime, Supabase Storage
-* **Integrasi AI**: Google Gemini API (dengan Search Grounding), OpenAI, Anthropic, Groq, DeepSeek, Ollama
+* **Integrasi AI**: Google Gemini API (dengan Search Grounding), OpenAI, Anthropic, Groq, OpenRouter
 * **Pengikis Data**: Cheerio, YouTube Data API v3
-* **Penyimpanan Lokal**: Offline-First LocalStorage dengan antrean sinkronisasi otomatis (*mutation replay queue*)
+* **Penyimpanan Lokal**: Offline-First LocalStorage dengan antrean sinkronisasi mutasi otomatis
 
 ---
 
@@ -130,6 +122,8 @@ cp .env.example .env.local
 
 Lengkapi kredensial yang dibutuhkan (semua integrasi memiliki fallback offline jika belum diisi):
 ```env
+NEXT_PUBLIC_SITE_URL=http://localhost:3001
+
 # Supabase Personal Cloud (Opsional)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
@@ -152,38 +146,41 @@ ZEINITY_INGEST_SECRET=super-secret-token
 ```bash
 npm run dev
 ```
-Buka peramban di [http://localhost:3000](http://localhost:3000).
+Buka peramban di [http://localhost:3001](http://localhost:3001).
 
 ---
 
-## 🧪 Pengujian & Verifikasi
+## 🧪 Pengujian & Verifikasi (Automated Test Suites)
 
-Proyek dilengkapi dengan test suite mandiri untuk memastikan integritas logika bisnis:
+Proyek dilengkapi dengan test suite mandiri untuk memastikan integritas logika bisnis multi-format:
 
 ```bash
-# Uji unit Title Validator, Pace Calculator, dan Exporter
-npx tsx test-validator.ts
+# Menjalankan suite pengujian komprehensif Fase 5 (8 modul uji)
+npm test
 
-# Uji integrasi arsitektur, Supabase hybrid fallback, dan AI router
-npx tsx test-roadmap-integration.ts
+# Menjalankan seluruh rangkaian tes integrasi (Fase 3, 4, dan 5)
+npm run test:all
 
-# Uji failover endpoint & fallback
-npx tsx test-failover-routes.ts
-
-# Pemeriksaan ketat tipe TypeScript
+# Pemeriksaan ketat tipe TypeScript (Zero Errors)
 npx tsc --noEmit
+
+# Validasi build produksi Next.js 15
+npm run build
 ```
 
 ---
 
 ## ⌨️ Pintasan Keyboard (Global Shortcuts)
 
-| Pintasan | Fungsi |
-| :--- | :--- |
-| `/` | Buka Pencarian Global (Global Search Modal) |
-| `Ctrl + S` / `Cmd + S` | Simpan Instan Draft / Kirim Formulir Aktif |
-| `Ctrl + \`` | Buka / Tutup macOS Live Diagnostic Terminal |
-| `Esc` | Tutup Modal, Drawer, atau Pencarian Aktif |
+| Pintasan | Lingkup | Fungsi |
+| :--- | :--- | :--- |
+| `/` | Global | Buka Pencarian Global (Global Search Modal) |
+| `Ctrl + S` / `Cmd + S` | Global / Studio | Simpan Instan Draft / Kirim Formulir Aktif |
+| `Ctrl + 1` | Studio Modal | Pindah ke Tab 1 (Naskah Studio) |
+| `Ctrl + 2` | Studio Modal | Pindah ke Tab 2 (Packaging, SEO & Thumbnail) |
+| `Ctrl + 3` | Studio Modal | Pindah ke Tab 3 (Metadata & Checklist) |
+| `Ctrl + \`` | Global | Buka / Tutup macOS Live Diagnostic Terminal |
+| `Esc` | Global / Modal | Tutup Modal Studio, Drawer, atau Pencarian Aktif |
 
 ---
 
