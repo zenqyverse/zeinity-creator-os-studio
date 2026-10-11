@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { evaluateIdeaSuitability } from '../../../../lib/ai-service';
 import { studioStore } from '../../../../lib/storage';
+import { queueTelegramIdea } from '../../../../lib/telegram-queue';
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_OWNER_CHAT_ID = process.env.TELEGRAM_OWNER_CHAT_ID;
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
 
     const { viability_score, ai_recommended_pillar, ai_recommended_format } = await evaluateIdeaSuitability(ideaText);
 
-    studioStore.saveContentItem({
+    const savedIdea = studioStore.saveContentItem({
       type: 'idea',
       title: ideaText,
       source: 'telegram',
@@ -86,6 +87,8 @@ export async function POST(req: Request) {
       visual_readiness: 'Belum dicek',
       priority: 'Sedang'
     });
+
+    queueTelegramIdea(savedIdea);
     
     await sendTelegramMessage(chatId, `Idea saved! Score: ${viability_score}. Pillar: ${ai_recommended_pillar}. Format: ${ai_recommended_format}.`);
     

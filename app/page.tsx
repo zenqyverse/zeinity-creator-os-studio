@@ -55,6 +55,7 @@ export default function ZeinityStudioPage() {
   const [editingItem, setEditingItem] = useState<any>(null);
   const [isStudioModalOpen, setIsStudioModalOpen] = useState(false);
   const [studioModalItem, setStudioModalItem] = useState<ContentItem | null>(null);
+  const [settingsTab, setSettingsTab] = useState<'supabase' | 'youtube' | 'telegram' | 'ai' | 'rss'>('telegram');
 
   // Scroll management
   const mainRef = useRef<HTMLElement>(null);
@@ -239,6 +240,9 @@ export default function ZeinityStudioPage() {
       return;
     }
     setCurrentTab(tab);
+    if (tab === 'settings' && itemId) {
+      setSettingsTab(itemId as any);
+    }
     if (itemId) setSelectedItemId(itemId);
   };
 
@@ -421,7 +425,7 @@ export default function ZeinityStudioPage() {
           )}
 
           {currentTab === 'settings' && (
-            <AiSettingsModule configs={aiConfigs} />
+            <AiSettingsModule configs={aiConfigs} initialTab={settingsTab} />
           )}
         </main>
       </div>

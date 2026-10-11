@@ -14,6 +14,7 @@ import {
   FilterPreset,
   ActivityLog,
   ScriptVersion,
+  TelegramConfig,
 } from './types';
 import {
   INITIAL_CONTENT_ITEMS,
@@ -126,6 +127,7 @@ class StudioStore {
   private presets: FilterPreset[] = [];
   private logs: ActivityLog[] = [];
   private scriptVersions: ScriptVersion[] = [];
+  private telegramConfig: TelegramConfig = {};
   private offlineQueue: OfflineMutation[] = [];
   private isOnline: boolean = true;
 
@@ -232,6 +234,7 @@ class StudioStore {
       this.feeds = dedupeArrayById(get('feeds') || [...INITIAL_RSS_FEEDS]);
       this.aiConfigs = dedupeArrayById(get('ai_configs') || [...INITIAL_AI_CONFIGS]);
       this.scriptVersions = dedupeArrayById(get('script_versions') || [...INITIAL_SCRIPT_VERSIONS]);
+      this.telegramConfig = get('telegram_config') || {};
       this.presets = dedupeArrayById(get('presets') || [
         {
           id: 'p-01',
@@ -879,6 +882,21 @@ class StudioStore {
       this.saveToLocalStorage('ai_configs', this.aiConfigs);
       this.notify();
     }
+  }
+
+  // --- Telegram Configurations ---
+  public getTelegramConfig(): TelegramConfig {
+    return { ...this.telegramConfig };
+  }
+
+  public saveTelegramConfig(cfg: Partial<TelegramConfig>): TelegramConfig {
+    this.telegramConfig = {
+      ...this.telegramConfig,
+      ...cfg,
+    };
+    this.saveToLocalStorage('telegram_config', this.telegramConfig);
+    this.notify();
+    return { ...this.telegramConfig };
   }
 
   // --- Filter Presets ---

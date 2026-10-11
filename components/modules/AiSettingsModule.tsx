@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AiConfig, AiProvider } from '../../lib/types';
 import { studioStore } from '../../lib/storage';
 import { checkProviderHealth, fetchProviderModels } from '../../lib/ai-service';
@@ -21,18 +21,215 @@ import {
   Shield,
   Layers,
   Save,
+  Send,
+  Bot,
+  Eye,
+  EyeOff,
+  ExternalLink,
+  Copy,
+  Trash2,
+  Check,
 } from 'lucide-react';
 
 interface AiSettingsModuleProps {
   configs: AiConfig[];
+  initialTab?: 'supabase' | 'youtube' | 'telegram' | 'ai' | 'rss';
 }
 
-export function AiSettingsModule({ configs }: AiSettingsModuleProps) {
+export function AiSettingsModule({ configs, initialTab }: AiSettingsModuleProps) {
   const { showToast } = useToast();
   const [selectedProvider, setSelectedProvider] = useState<AiProvider>('gemini');
-  const [activeSettingsTab, setActiveSettingsTab] = useState<'supabase' | 'youtube' | 'ai' | 'rss'>('ai');
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'supabase' | 'youtube' | 'telegram' | 'ai' | 'rss'>(
+    initialTab || 'telegram'
+  );
   const [testingHealth, setTestingHealth] = useState(false);
   const [fetchingModels, setFetchingModels] = useState(false);
+
+  // Sync initialTab when prop changes
+  useEffect(() => {
+    if (initialTab) {
+      setActiveSettingsTab(initialTab);
+    }
+  }, [initialTab]);
+
+  // --- Telegram Bot States ---
+  const [tgToken, setTgToken] = useState(() => studioStore.getTelegramConfig().bot_token || '');
+  const [tgOwnerChatId, setTgOwnerChatId] = useState(() => studioStore.getTelegramConfig().owner_chat_id || '');
+  const [tgWebhookUrl, setTgWebhookUrl] = useState(() => {
+    const saved = studioStore.getTelegramConfig().webhook_url;
+    if (saved) return saved;
+    if (typeof window !== 'undefined') {
+      return `${window.location.origin}/api/telegram/webhook`;
+    }
+    return '';
+  });
+  const [showTgToken, setShowTgToken] = useState(false);
+  const [tgLoading, setTgLoading] = useState(false);
+  const [tgBotInfo, setTgBotInfo] = useState<{ id?: number; first_name?: string; username?: string } | null>(() => {
+    const saved = studioStore.getTelegramConfig();
+    if (saved.bot_username) {
+      return { username: saved.bot_username, first_name: saved.bot_name };
+    }
+    return null;
+  });
+  const [tgWebhookInfo, setTgWebhookInfo] = useState<any>(null);
+  const [tgStatusMessage, setTgStatusMessage] = useState<string | null>(null);
+  const [copiedWebhook, setCopiedWebhook] = useState(false);
+
+  // Auto-verify token on mount if present
+  useEffect(() => {
+    if (tgToken && !tgBotInfo) {
+      fetch(`/api/telegram/setup?token=${encodeURIComponent(tgToken.trim())}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.configured) {
+            setTgBotInfo({
+              id: data.bot_id,
+              first_name: data.bot_name,
+              username: data.bot_username,
+            });
+            if (data.webhook_info) {
+              setTgWebhookInfo(data.webhook_info);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
+
+  const handleTestTgBot = async () => {
+    if (!tgToken.trim()) {
+      showToast('Masukkan Bot Token Telegram terlebih dahulu', 'error');
+      return;
+    }
+    setTgLoading(true);
+    setTgStatusMessage('Menguji token ke Telegram API...');
+    try {
+      const res = await fetch('/api/telegram/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'test_token', token: tgToken.trim() }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setTgBotInfo(data.bot);
+        showToast(`Bot Terhubung: @${data.bot.username} (${data.bot.first_name})`, 'success');
+        setTgStatusMessage(`Koneksi Berhasil! Bot @${data.bot.username} aktif.`);
+        studioStore.saveTelegramConfig({
+          bot_token: tgToken.trim(),
+          owner_chat_id: tgOwnerChatId.trim(),
+          bot_username: data.bot.username,
+          bot_name: data.bot.first_name,
+          is_active: true,
+          last_tested_at: new Date().toISOString(),
+        });
+      } else {
+        showToast(data.error || 'Token bot tidak valid', 'error');
+        setTgStatusMessage(`Galat: ${data.error}`);
+      }
+    } catch (e: any) {
+      showToast(e.message || 'Gagal menghubungi server', 'error');
+      setTgStatusMessage(`Galat jaringan: ${e.message}`);
+    } finally {
+      setTgLoading(false);
+    }
+  };
+
+  const handleSetTgWebhook = async () => {
+    if (!tgToken.trim()) {
+      showToast('Masukkan Bot Token Telegram terlebih dahulu', 'error');
+      return;
+    }
+    if (!tgWebhookUrl.trim()) {
+      showToast('Masukkan URL Webhook publik terlebih dahulu', 'error');
+      return;
+    }
+    setTgLoading(true);
+    setTgStatusMessage('Mendaftarkan webhook ke Telegram...');
+    try {
+      const res = await fetch('/api/telegram/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'set_webhook',
+          token: tgToken.trim(),
+          webhook_url: tgWebhookUrl.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showToast('Webhook Telegram berhasil didaftarkan!', 'success');
+        setTgStatusMessage(`Webhook aktif: ${tgWebhookUrl}`);
+        studioStore.saveTelegramConfig({
+          bot_token: tgToken.trim(),
+          owner_chat_id: tgOwnerChatId.trim(),
+          webhook_url: tgWebhookUrl.trim(),
+          webhook_status: 'active',
+        });
+        handleCheckTgWebhookInfo();
+      } else {
+        showToast(data.error || 'Gagal mengatur webhook', 'error');
+        setTgStatusMessage(`Gagal Webhook: ${data.error}`);
+      }
+    } catch (e: any) {
+      showToast(e.message || 'Gagal menghubungi server', 'error');
+    } finally {
+      setTgLoading(false);
+    }
+  };
+
+  const handleCheckTgWebhookInfo = async () => {
+    if (!tgToken.trim()) return;
+    try {
+      const res = await fetch('/api/telegram/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get_webhook_info', token: tgToken.trim() }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setTgWebhookInfo(data.result);
+        showToast('Status webhook berhasil dimuat dari Telegram', 'info');
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleDeleteTgWebhook = async () => {
+    if (!tgToken.trim()) return;
+    if (!confirm('Hapus pendaftaran webhook dari Telegram?')) return;
+    setTgLoading(true);
+    try {
+      const res = await fetch('/api/telegram/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete_webhook', token: tgToken.trim() }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showToast('Webhook berhasil dicopot dari Telegram', 'info');
+        setTgWebhookInfo(null);
+        studioStore.saveTelegramConfig({
+          webhook_status: 'inactive',
+        });
+      }
+    } catch (e: any) {
+      showToast(e.message, 'error');
+    } finally {
+      setTgLoading(false);
+    }
+  };
+
+  const handleSaveTgConfig = () => {
+    studioStore.saveTelegramConfig({
+      bot_token: tgToken.trim(),
+      owner_chat_id: tgOwnerChatId.trim(),
+      webhook_url: tgWebhookUrl.trim(),
+      is_active: !!tgToken.trim(),
+    });
+    showToast('Konfigurasi Telegram tersimpan di studio', 'success');
+  };
 
   const activeConfig = configs.find((c) => c.provider === selectedProvider) || configs[0];
 
@@ -152,6 +349,7 @@ export function AiSettingsModule({ configs }: AiSettingsModuleProps) {
         {[
           { id: 'supabase', label: 'Cloud Supabase' },
           { id: 'youtube', label: 'YouTube & OAuth' },
+          { id: 'telegram', label: 'Telegram Bot' },
           { id: 'ai', label: 'AI Providers' },
           { id: 'rss', label: 'RSS Sources' }
         ].map((tab) => (
@@ -258,6 +456,315 @@ export function AiSettingsModule({ configs }: AiSettingsModuleProps) {
                Uji Koneksi
              </button>
              <span className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/30">Terverifikasi</span>
+          </div>
+        </div>
+      )}
+
+      {activeSettingsTab === 'telegram' && (
+        <div className="space-y-6">
+          {/* Main Card: Connection & Credentials */}
+          <div className="p-6 rounded-2xl bg-zpanel border border-zline space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zline/60">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#24A1DE]/10 border border-[#24A1DE]/30 flex items-center justify-center shrink-0">
+                  <Send className="w-5 h-5 text-[#24A1DE]" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-zink flex items-center gap-2">
+                    Telegram Bot Ingestion Gateway
+                    {tgBotInfo?.username ? (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-mono border border-emerald-500/30">
+                        @{tgBotInfo.username} Aktif
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-medium border border-amber-500/30">
+                        Belum Terhubung
+                      </span>
+                    )}
+                  </h2>
+                  <p className="text-xs text-zmuted mt-0.5">
+                    Kirimkan teks ide, tautan changelog, atau screenshot dari Telegram Anda ke Inbox Ide Mentah.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSaveTgConfig}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zaccent hover:bg-zaccent-hover text-black font-bold text-xs shadow-md shadow-zaccent/20 transition-all hover:scale-[1.02]"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  Simpan Pengaturan
+                </button>
+              </div>
+            </div>
+
+            {/* Inputs Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Token Input */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-zink">
+                    Bot Token Telegram
+                  </label>
+                  <a
+                    href="https://t.me/BotFather"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-[#24A1DE] hover:underline flex items-center gap-1"
+                  >
+                    Dapatkan di @BotFather <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showTgToken ? 'text' : 'password'}
+                    placeholder="Contoh: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz..."
+                    value={tgToken}
+                    onChange={(e) => setTgToken(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-zpanel-2 border border-zline focus:border-zcyan text-xs text-zink placeholder-zmuted outline-none font-mono pr-20"
+                  />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowTgToken(!showTgToken)}
+                      className="p-1 rounded text-zmuted hover:text-zink"
+                      title={showTgToken ? 'Sembunyikan Token' : 'Tampilkan Token'}
+                    >
+                      {showTgToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[10px] text-zmuted">
+                  Token API dari BotFather. Jangan bagikan token ini kepada orang lain.
+                </p>
+                <div className="pt-1">
+                  <button
+                    onClick={handleTestTgBot}
+                    disabled={tgLoading || !tgToken.trim()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zpanel-2 hover:bg-zinc-800 border border-zline text-xs font-bold text-zcyan transition-colors disabled:opacity-50"
+                  >
+                    {tgLoading ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                    Uji Token Bot (getMe)
+                  </button>
+                </div>
+              </div>
+
+              {/* Owner Chat ID Input */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-zink">
+                    Owner Chat ID (Pengaman Studio)
+                  </label>
+                  <a
+                    href="https://t.me/userinfobot"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-[#24A1DE] hover:underline flex items-center gap-1"
+                  >
+                    Cek di @userinfobot <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Contoh: 987654321"
+                  value={tgOwnerChatId}
+                  onChange={(e) => setTgOwnerChatId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zpanel-2 border border-zline focus:border-zcyan text-xs text-zink placeholder-zmuted outline-none font-mono"
+                />
+                <p className="text-[10px] text-zmuted">
+                  ID numerik akun Telegram Anda. Hanya chat dari akun ini yang diizinkan memasukkan ide ke studio (Anti-Spam Whitelist).
+                </p>
+              </div>
+            </div>
+
+            {/* Webhook Configuration Section */}
+            <div className="pt-4 border-t border-zline/60 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <label className="text-xs font-semibold text-zink">
+                  URL Webhook Publik (Penerima Pesan Telegram)
+                </label>
+                <span className="text-[10px] text-zmuted">
+                  Endpoint: <code className="text-zcyan">/api/telegram/webhook</code>
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="https://your-domain.vercel.app/api/telegram/webhook"
+                  value={tgWebhookUrl}
+                  onChange={(e) => setTgWebhookUrl(e.target.value)}
+                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-zpanel-2 border border-zline focus:border-zcyan text-xs text-zink placeholder-zmuted outline-none font-mono"
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(tgWebhookUrl);
+                    setCopiedWebhook(true);
+                    showToast('URL Webhook disalin ke clipboard', 'info');
+                    setTimeout(() => setCopiedWebhook(false), 2000);
+                  }}
+                  className="p-2.5 rounded-xl bg-zpanel-2 hover:bg-zinc-800 border border-zline text-zmuted hover:text-zink transition-colors"
+                  title="Salin URL"
+                >
+                  {copiedWebhook ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <button
+                  onClick={handleSetTgWebhook}
+                  disabled={tgLoading || !tgToken.trim() || !tgWebhookUrl.trim()}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zcyan hover:bg-zcyan-hover text-black font-bold text-xs shadow-sm transition-all disabled:opacity-50"
+                >
+                  <Bot className="w-3.5 h-3.5" />
+                  Daftarkan Webhook ke Telegram (1-Click)
+                </button>
+
+                <button
+                  onClick={handleCheckTgWebhookInfo}
+                  disabled={tgLoading || !tgToken.trim()}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zpanel-2 hover:bg-zinc-800 border border-zline text-xs font-semibold text-zink transition-colors disabled:opacity-50"
+                >
+                  <Activity className="w-3.5 h-3.5 text-zcyan" />
+                  Cek Status Webhook (Live)
+                </button>
+
+                {tgWebhookInfo?.url && (
+                  <button
+                    onClick={handleDeleteTgWebhook}
+                    disabled={tgLoading}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-xs font-semibold text-red-400 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Copot Webhook
+                  </button>
+                )}
+              </div>
+
+              {/* Status Message or Live Webhook Info */}
+              {tgStatusMessage && (
+                <div className="p-3 rounded-xl bg-zpanel-2 border border-zline text-xs text-zink flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{tgStatusMessage}</span>
+                </div>
+              )}
+
+              {tgWebhookInfo && (
+                <div className="p-3.5 rounded-xl bg-zpanel-2/60 border border-zline/60 space-y-1.5 text-[11px] font-mono text-zmuted">
+                  <div className="flex items-center justify-between text-zink font-bold text-xs border-b border-zline/40 pb-1">
+                    <span>STATUS WEBHOOK TELEGRAM LIVE:</span>
+                    <span className={tgWebhookInfo.url ? 'text-emerald-400' : 'text-amber-400'}>
+                      {tgWebhookInfo.url ? 'TERDAFTAR' : 'TIDAK TERDAFTAR'}
+                    </span>
+                  </div>
+                  <div>URL Terdaftar: <span className="text-zcyan">{tgWebhookInfo.url || '(kosong)'}</span></div>
+                  <div>Pending Updates: <span className="text-amber-400">{tgWebhookInfo.pending_update_count || 0}</span></div>
+                  {tgWebhookInfo.last_error_message && (
+                    <div className="text-red-400">Galat Terakhir: {tgWebhookInfo.last_error_message}</div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Interactive 4-Step Onboarding Guide */}
+          <div className="p-6 rounded-2xl bg-zpanel border border-zline space-y-4">
+            <h3 className="text-sm font-bold text-zink flex items-center gap-2">
+              <Bot className="w-4 h-4 text-[#24A1DE]" />
+              Panduan Praktis Setup Bot Telegram Zeinity (4 Langkah)
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              <div className="p-3.5 rounded-xl bg-zpanel-2 border border-zline space-y-2">
+                <div className="w-6 h-6 rounded-lg bg-zcyan/20 text-zcyan font-black flex items-center justify-center text-xs">
+                  1
+                </div>
+                <div className="font-bold text-zink">Buat Bot di BotFather</div>
+                <p className="text-[11px] text-zmuted leading-relaxed">
+                  Buka Telegram, cari <code className="text-[#24A1DE]">@BotFather</code>, kirim <code className="text-zcyan">/newbot</code>, tentukan nama (cth: Zeinity Ideas) dan username.
+                </p>
+                <a
+                  href="https://t.me/BotFather"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] text-zcyan font-semibold hover:underline"
+                >
+                  Buka BotFather <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-zpanel-2 border border-zline space-y-2">
+                <div className="w-6 h-6 rounded-lg bg-zcyan/20 text-zcyan font-black flex items-center justify-center text-xs">
+                  2
+                </div>
+                <div className="font-bold text-zink">Salin Token & Chat ID</div>
+                <p className="text-[11px] text-zmuted leading-relaxed">
+                  Salin HTTP API Token dari BotFather ke kolom di atas. Lalu buka <code className="text-[#24A1DE]">@userinfobot</code> untuk menyalin ID akun Anda.
+                </p>
+                <a
+                  href="https://t.me/userinfobot"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] text-zcyan font-semibold hover:underline"
+                >
+                  Buka userinfobot <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-zpanel-2 border border-zline space-y-2">
+                <div className="w-6 h-6 rounded-lg bg-zcyan/20 text-zcyan font-black flex items-center justify-center text-xs">
+                  3
+                </div>
+                <div className="font-bold text-zink">Daftarkan Webhook</div>
+                <p className="text-[11px] text-zmuted leading-relaxed">
+                  Pastikan aplikasi memiliki URL HTTPS publik (Vercel, Cloudflare Tunnel, atau ngrok), lalu klik tombol <b>"Daftarkan Webhook (1-Click)"</b>.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-zpanel-2 border border-zline space-y-2">
+                <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 font-black flex items-center justify-center text-xs">
+                  4
+                </div>
+                <div className="font-bold text-zink">Mulai Kirim Ide!</div>
+                <p className="text-[11px] text-zmuted leading-relaxed">
+                  Buka chat bot Anda di HP, kirimkan teks ide, link, atau screenshot. AI akan otomatis menilai dan memasukkannya ke <b>Inbox Ide</b>!
+                </p>
+                {tgBotInfo?.username && (
+                  <a
+                    href={`https://t.me/${tgBotInfo.username}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-semibold hover:underline"
+                  >
+                    Buka Chat Bot <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Commands Quick Sheet */}
+            <div className="pt-3 border-t border-zline/60">
+              <div className="text-xs font-bold text-zink mb-2">Daftar Perintah Bot yang Didukung:</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-[11px]">
+                <div className="p-2.5 rounded-lg bg-zpanel-2 border border-zline/60">
+                  <code className="text-amber-400 font-bold font-mono">/idea [topik]</code>
+                  <p className="text-zmuted mt-0.5">Membuat ide spesifik dengan evaluasi AI.</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-zpanel-2 border border-zline/60">
+                  <code className="text-zcyan font-bold font-mono">Kirim teks / URL</code>
+                  <p className="text-zmuted mt-0.5">Otomatis dicatat sebagai ide mentah.</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-zpanel-2 border border-zline/60">
+                  <code className="text-emerald-400 font-bold font-mono">Kirim foto / tangkapan</code>
+                  <p className="text-zmuted mt-0.5">Dicatat dengan lampiran visual.</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-zpanel-2 border border-zline/60">
+                  <code className="text-purple-400 font-bold font-mono">/status</code>
+                  <p className="text-zmuted mt-0.5">Melihat jumlah ide inbox & pipeline studio.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

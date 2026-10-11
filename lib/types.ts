@@ -286,3 +286,15 @@ export interface ActivityLog {
   details: string;
   timestamp: string;
 }
+
+export interface TelegramConfig {
+  bot_token?: string;
+  owner_chat_id?: string;
+  webhook_url?: string;
+  bot_username?: string;
+  bot_name?: string;
+  is_active?: boolean;
+  last_tested_at?: string;
+  webhook_status?: 'active' | 'inactive' | 'error' | 'pending';
+  last_error?: string;
+}

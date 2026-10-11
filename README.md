@@ -77,14 +77,20 @@ Menu *Script Studio* dan *Production Studio* telah dilebur ke dalam Modal Terpad
 1. `Overview` (Command Center & Daily Focus)
 2. `Content Pipeline` (Pusat Kendali Proyek Multi-Format)
 3. `Radar Tren` (YouTube Data API v3 & Tech RSS)
-4. `Idea Bank` (Triage Ide Mentah & Skor Kelayakan Konten)
+4. `Idea Bank` (Triage Ide Mentah, Integrasi Chat Telegram & Skor Kelayakan Konten)
 5. `Calendar` (Slot Publikasi Terpisah Shorts 07:00 / Long-Form 19:00 WIB)
 6. `Research & Fact Check` (Gemini Grounding & Scraper)
 7. `Asset Library` (Manajemen Media & B-Roll)
 8. `Analytics & Learning` (Evaluasi Metrik & Benchmark Retensi)
-9. `AI Settings` (BYOK Multi-Provider AI)
+9. `Settings & Integrations Hub` (Supabase Cloud, YouTube API, Telegram Bot Gateway, AI BYOK, RSS Feeds)
 
-### 5. macOS Live Diagnostic Terminal Dock (`Ctrl + \``)
+### 5. Telegram Bot Ingestion Gateway (Chat-to-Studio Ingestion)
+* **Kirim Ide Instan dari HP**: Kirimkan teks ide, tautan berita/changelog, atau screenshot langsung dari Telegram untuk masuk ke **Inbox Ide Mentah**.
+* **Manajemen Pengaturan Terpusat di UI**: Tab khusus **Telegram Bot** di Hub Pengaturan untuk memasukkan Bot Token, Owner Chat ID (whitelist pengaman anti-spam), dan pendaftaran Webhook 1-Klik (`setWebhook`).
+* **Inspeksi Status Live**: Cek status webhook aktif, jumlah pembaruan tertunda (*pending updates*), dan uji koneksi bot instan (`getMe`).
+* **Sinkronisasi Otomatis & Tombol Manual**: Antrean server menyimpan ide masuk dan otomatis mengalirkannya ke browser studio saat Bank Ide dibuka, lengkap dengan tombol *"Sinkronkan Ide Masuk"*.
+
+### 6. macOS Live Diagnostic Terminal Dock (`Ctrl + \``)
 * Terminal mengambang bergaya macOS untuk inspeksi kesehatan sistem real-time.
 * **Humanized Root-Cause Parser**: Menjelaskan error dalam Bahasa Indonesia (apa yang terjadi, akar masalah, dan solusi konkret).
 

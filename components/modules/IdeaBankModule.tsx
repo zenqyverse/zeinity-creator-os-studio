@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ContentItem } from '../../lib/types';
 import { studioStore } from '../../lib/storage';
 import { useToast } from '../ToastContainer';
@@ -22,7 +22,9 @@ import {
   Save,
   Check,
   X,
-  Edit2
+  Edit2,
+  Send,
+  RefreshCw,
 } from 'lucide-react';
 
 interface IdeaBankModuleProps {
@@ -50,6 +52,56 @@ export function IdeaBankModule({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editNotes, setEditNotes] = useState('');
+
+  // Telegram Bot integration states
+  const tgConfig = studioStore.getTelegramConfig();
+  const isTelegramConfigured = !!tgConfig.bot_token;
+  const [isSyncingTg, setIsSyncingTg] = useState(false);
+
+  // Auto-sync pending ideas on mount
+  useEffect(() => {
+    fetch('/api/telegram/ideas')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ideas && data.ideas.length > 0) {
+          for (const item of data.ideas) {
+            studioStore.saveContentItem(item);
+          }
+          fetch('/api/telegram/ideas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'clear' }),
+          });
+          showToast(`${data.ideas.length} ide baru dari Telegram otomatis masuk ke Inbox!`, 'success');
+        }
+      })
+      .catch(() => {});
+  }, [showToast]);
+
+  const handleSyncTelegramIdeas = async () => {
+    setIsSyncingTg(true);
+    try {
+      const res = await fetch('/api/telegram/ideas');
+      const data = await res.json();
+      if (data.ideas && data.ideas.length > 0) {
+        for (const item of data.ideas) {
+          studioStore.saveContentItem(item);
+        }
+        await fetch('/api/telegram/ideas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'clear' }),
+        });
+        showToast(`${data.ideas.length} ide baru dari Telegram berhasil disinkronkan!`, 'success');
+      } else {
+        showToast('Tidak ada ide baru yang tertunda di antrean Telegram.', 'info');
+      }
+    } catch (err: any) {
+      showToast('Gagal menarik ide Telegram: ' + err.message, 'error');
+    } finally {
+      setIsSyncingTg(false);
+    }
+  };
 
   // Define what is raw
   const rawIdeas = ideas.filter((idea) => idea.is_raw || idea.source);
@@ -160,7 +212,33 @@ export function IdeaBankModule({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          {/* Telegram Ingest Status & Sync Button */}
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-zpanel-2 border border-zline">
+            <button
+              onClick={() => onNavigate('settings', 'telegram')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-zink hover:text-white hover:bg-zline/30 transition-colors"
+              title="Pengaturan & Status Bot Telegram Ingestion"
+            >
+              <Send className="w-3.5 h-3.5 text-[#24A1DE]" />
+              <span className="hidden sm:inline">Bot Telegram</span>
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isTelegramConfigured ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'
+                }`}
+                title={isTelegramConfigured ? 'Telegram Terhubung' : 'Telegram Belum Di-setup'}
+              />
+            </button>
+            <button
+              onClick={handleSyncTelegramIdeas}
+              disabled={isSyncingTg}
+              className="p-1.5 rounded-lg text-zmuted hover:text-zcyan hover:bg-zline/40 transition-colors disabled:opacity-50"
+              title="Sinkronkan Ide Masuk dari Telegram"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncingTg ? 'animate-spin text-zcyan' : ''}`} />
+            </button>
+          </div>
+
           <button
             onClick={() => onNavigate('radar')}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zpanel-2 border border-zline hover:border-zcyan text-xs font-semibold text-zink transition-colors"
@@ -177,6 +255,29 @@ export function IdeaBankModule({
           </button>
         </div>
       </div>
+
+      {/* Telegram Onboarding Banner for Raw Inbox */}
+      {!isTelegramConfigured && activeTab === 'inbox' && (
+        <div className="p-4 rounded-xl bg-gradient-to-r from-zpanel via-[#24A1DE]/10 to-zpanel border border-[#24A1DE]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-[#24A1DE]/20 flex items-center justify-center shrink-0">
+              <Send className="w-4 h-4 text-[#24A1DE]" />
+            </div>
+            <div>
+              <div className="font-bold text-zink">Kirim Ide dari Smartphone via Chat Telegram</div>
+              <p className="text-[11px] text-zmuted mt-0.5">
+                Hubungkan Telegram Bot untuk menangkap ide spontan, URL artikel, atau screenshot saat bepergian langsung ke Inbox ini dengan penilaian AI otomatis.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => onNavigate('settings', 'telegram')}
+            className="px-3.5 py-2 rounded-xl bg-[#24A1DE] hover:bg-[#1E88E5] text-white font-bold text-xs shrink-0 shadow-md transition-all self-start sm:self-auto"
+          >
+            Setup Bot Sekarang
+          </button>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-zline pb-2">
