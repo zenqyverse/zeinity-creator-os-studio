@@ -17,6 +17,8 @@ import {
 import { TitleValidatorBar } from '../TitleValidatorBar';
 import { validateTitle } from '../../lib/validator';
 import { studioStore } from '../../lib/storage';
+import { useToast } from '../ToastContainer';
+import { ConfirmDialogModal } from '../ConfirmDialogModal';
 import {
   UploadCloud,
   CheckCircle2,
@@ -26,6 +28,7 @@ import {
   Music,
   FileText,
   AlertTriangle,
+  Trash2,
 } from 'lucide-react';
 
 const STOP_WORDS = new Set([
@@ -62,9 +65,12 @@ interface ContentFormProps {
   type: 'content' | 'idea';
   onSubmit: (data: Partial<ContentItem>) => void;
   onCancel: () => void;
+  onDelete?: (id: string) => void;
 }
 
-export function ContentForm({ initialData = {}, type, onSubmit, onCancel }: ContentFormProps) {
+export function ContentForm({ initialData = {}, type, onSubmit, onCancel, onDelete }: ContentFormProps) {
+  const { showToast } = useToast();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [title, setTitle] = useState(initialData.title || '');
   const [pillar, setPillar] = useState<Pillar>(initialData.pillar || 'AI & Technology');
   const [format, setFormat] = useState<VideoFormat>(initialData.format || 'Quick Breakdown');
@@ -295,21 +301,55 @@ export function ContentForm({ initialData = {}, type, onSubmit, onCancel }: Cont
       </div>
 
       {/* Actions */}
-      <div className="pt-3 border-t border-zline flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 rounded-xl bg-zpanel-2 border border-zline text-zmuted hover:text-zink font-semibold"
-        >
-          Batal
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 rounded-xl bg-zaccent hover:bg-zaccent-hover text-black font-bold shadow-sm"
-        >
-          Simpan {type === 'idea' ? 'Ide' : 'Konten'}
-        </button>
+      <div className="pt-3 border-t border-zline flex items-center justify-between gap-2">
+        {initialData.id ? (
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Hapus {type === 'idea' ? 'Ide' : 'Konten'}</span>
+          </button>
+        ) : (
+          <div />
+        )}
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 rounded-xl bg-zpanel-2 border border-zline text-zmuted hover:text-zink font-semibold text-xs"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-xl bg-zaccent hover:bg-zaccent-hover text-black font-bold text-xs shadow-sm"
+          >
+            Simpan {type === 'idea' ? 'Ide' : 'Konten'}
+          </button>
+        </div>
       </div>
+
+      <ConfirmDialogModal
+        isOpen={showDeleteConfirm}
+        title={`Hapus ${type === 'idea' ? 'Ide' : 'Konten'}?`}
+        message={`Apakah Anda yakin ingin menghapus "${title || initialData.title || ''}"? Tindakan ini dapat dibatalkan melalui notifikasi Undo.`}
+        confirmLabel="Ya, Hapus"
+        cancelLabel="Batal"
+        variant="danger"
+        onConfirm={() => {
+          if (initialData.id) {
+            studioStore.deleteItem(initialData.id);
+            showToast(`${type === 'idea' ? 'Ide' : 'Konten'} "${title || initialData.title}" dihapus`, 'info', true);
+            if (onDelete) onDelete(initialData.id);
+            setShowDeleteConfirm(false);
+            onCancel();
+          }
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </form>
   );
 }
@@ -322,6 +362,7 @@ interface ResearchSourceFormProps {
   contentItems: ContentItem[];
   onSubmit: (data: Partial<ResearchSource>) => void;
   onCancel: () => void;
+  onDelete?: (id: string) => void;
 }
 
 export function ResearchSourceForm({
@@ -329,7 +370,10 @@ export function ResearchSourceForm({
   contentItems,
   onSubmit,
   onCancel,
+  onDelete,
 }: ResearchSourceFormProps) {
+  const { showToast } = useToast();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [title, setTitle] = useState(initialData.source_title || '');
   const [url, setUrl] = useState(initialData.source_url || '');
   const [platform, setPlatform] = useState(initialData.source_platform || 'Dokumen Resmi Platform');
@@ -572,21 +616,55 @@ export function ResearchSourceForm({
       </label>
 
       {/* Buttons */}
-      <div className="pt-3 border-t border-zline flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 rounded-xl bg-zpanel-2 border border-zline text-zmuted hover:text-zink font-semibold"
-        >
-          Batal
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold shadow-sm"
-        >
-          Simpan Sumber Riset
-        </button>
+      <div className="pt-3 border-t border-zline flex items-center justify-between gap-2">
+        {initialData.id ? (
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Hapus Sumber</span>
+          </button>
+        ) : (
+          <div />
+        )}
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 rounded-xl bg-zpanel-2 border border-zline text-zmuted hover:text-zink font-semibold text-xs"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs shadow-sm"
+          >
+            Simpan Sumber Riset
+          </button>
+        </div>
       </div>
+
+      <ConfirmDialogModal
+        isOpen={showDeleteConfirm}
+        title="Hapus Sumber Riset?"
+        message={`Apakah Anda yakin ingin menghapus sumber "${title || initialData.source_title || ''}"?`}
+        confirmLabel="Ya, Hapus"
+        cancelLabel="Batal"
+        variant="danger"
+        onConfirm={() => {
+          if (initialData.id) {
+            studioStore.deleteSource(initialData.id);
+            showToast(`Sumber "${title || initialData.source_title}" dihapus`, 'info');
+            if (onDelete) onDelete(initialData.id);
+            setShowDeleteConfirm(false);
+            onCancel();
+          }
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </form>
   );
 }
@@ -599,6 +677,7 @@ interface MediaAssetFormProps {
   contentItems: ContentItem[];
   onSubmit: (data: Partial<MediaAsset>) => void;
   onCancel: () => void;
+  onDelete?: (id: string) => void;
 }
 
 export function MediaAssetForm({
@@ -606,7 +685,10 @@ export function MediaAssetForm({
   contentItems,
   onSubmit,
   onCancel,
+  onDelete,
 }: MediaAssetFormProps) {
+  const { showToast } = useToast();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [name, setName] = useState(initialData.asset_name || '');
   const [type, setType] = useState<AssetType>(initialData.asset_type || 'Screen recording');
   const [url, setUrl] = useState(initialData.asset_url || '');
@@ -857,21 +939,55 @@ export function MediaAssetForm({
         />
       </div>
 
-      <div className="pt-3 border-t border-zline flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 rounded-xl bg-zpanel-2 border border-zline text-zmuted hover:text-zink font-semibold"
-        >
-          Batal
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 rounded-xl bg-zcyan hover:bg-zcyan-hover text-black font-bold shadow-sm"
-        >
-          Simpan Aset
-        </button>
+      <div className="pt-3 border-t border-zline flex items-center justify-between gap-2">
+        {initialData.id ? (
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Hapus Aset</span>
+          </button>
+        ) : (
+          <div />
+        )}
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 rounded-xl bg-zpanel-2 border border-zline text-zmuted hover:text-zink font-semibold text-xs"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-xl bg-zcyan hover:bg-zcyan-hover text-black font-bold text-xs shadow-sm"
+          >
+            Simpan Aset
+          </button>
+        </div>
       </div>
+
+      <ConfirmDialogModal
+        isOpen={showDeleteConfirm}
+        title="Hapus Metadata Aset?"
+        message={`Apakah Anda yakin ingin menghapus metadata aset "${name || initialData.asset_name || ''}"?`}
+        confirmLabel="Ya, Hapus"
+        cancelLabel="Batal"
+        variant="danger"
+        onConfirm={() => {
+          if (initialData.id) {
+            studioStore.deleteAsset(initialData.id);
+            showToast(`Aset "${name || initialData.asset_name}" dihapus`, 'info');
+            if (onDelete) onDelete(initialData.id);
+            setShowDeleteConfirm(false);
+            onCancel();
+          }
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </form>
   );
 }
@@ -883,9 +999,12 @@ interface MetricFormProps {
   initialData?: Partial<AnalyticsMetric>;
   onSubmit: (data: Partial<AnalyticsMetric>) => void;
   onCancel: () => void;
+  onDelete?: (id: string) => void;
 }
 
-export function MetricForm({ initialData = {}, onSubmit, onCancel }: MetricFormProps) {
+export function MetricForm({ initialData = {}, onSubmit, onCancel, onDelete }: MetricFormProps) {
+  const { showToast } = useToast();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [title, setTitle] = useState(initialData.title || '');
   const [views, setViews] = useState(initialData.views || 0);
   const [feed, setFeed] = useState(initialData.shown_in_feed || 0);
@@ -1014,21 +1133,55 @@ export function MetricForm({ initialData = {}, onSubmit, onCancel }: MetricFormP
         />
       </div>
 
-      <div className="pt-3 border-t border-zline flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 rounded-xl bg-zpanel-2 border border-zline text-zmuted hover:text-zink font-semibold"
-        >
-          Batal
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 rounded-xl bg-zaccent hover:bg-zaccent-hover text-black font-bold shadow-sm"
-        >
-          Simpan Metrik
-        </button>
+      <div className="pt-3 border-t border-zline flex items-center justify-between gap-2">
+        {initialData.id ? (
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Hapus Metrik</span>
+          </button>
+        ) : (
+          <div />
+        )}
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 rounded-xl bg-zpanel-2 border border-zline text-zmuted hover:text-zink font-semibold text-xs"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-xl bg-zaccent hover:bg-zaccent-hover text-black font-bold text-xs shadow-sm"
+          >
+            Simpan Metrik
+          </button>
+        </div>
       </div>
+
+      <ConfirmDialogModal
+        isOpen={showDeleteConfirm}
+        title="Hapus Metrik Video?"
+        message={`Apakah Anda yakin ingin menghapus data analitik "${title || initialData.title || ''}"?`}
+        confirmLabel="Ya, Hapus"
+        cancelLabel="Batal"
+        variant="danger"
+        onConfirm={() => {
+          if (initialData.id) {
+            studioStore.deleteMetric(initialData.id);
+            showToast(`Metrik "${title || initialData.title}" dihapus`, 'info');
+            if (onDelete) onDelete(initialData.id);
+            setShowDeleteConfirm(false);
+            onCancel();
+          }
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </form>
   );
 }

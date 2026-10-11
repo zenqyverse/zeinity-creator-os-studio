@@ -5,6 +5,7 @@ import { ContentItem } from '../../lib/types';
 import { studioStore } from '../../lib/storage';
 import { useToast } from '../ToastContainer';
 import { scrollToStudioTop } from '../../lib/scroll-utils';
+import { ConfirmDialogModal } from '../ConfirmDialogModal';
 import {
   Lightbulb,
   Plus,
@@ -48,6 +49,8 @@ export function IdeaBankModule({
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [readinessFilter, setReadinessFilter] = useState<string>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [ideaToDelete, setIdeaToDelete] = useState<ContentItem | null>(null);
+  const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false);
   
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -141,10 +144,15 @@ export function IdeaBankModule({
   };
 
   const handleDelete = (idea: ContentItem) => {
-    if (confirm(`Hapus ide "${idea.title}"?`)) {
-      studioStore.deleteItem(idea.id);
-      showToast('Ide dihapus dari backlog', 'info', true);
-    }
+    setIdeaToDelete(idea);
+  };
+
+  const handleExecuteDeleteIdea = () => {
+    if (!ideaToDelete) return;
+    const targetTitle = ideaToDelete.title;
+    studioStore.deleteItem(ideaToDelete.id);
+    showToast(`Ide "${targetTitle}" dihapus`, 'info', true);
+    setIdeaToDelete(null);
   };
 
   const handleMoveToBacklog = (idea: ContentItem) => {
@@ -173,13 +181,18 @@ export function IdeaBankModule({
   };
 
   const handleBatchDelete = () => {
-    if (confirm(`Hapus ${selectedIds.size} ide?`)) {
-      selectedIds.forEach((id) => {
-        studioStore.deleteItem(id);
-      });
-      showToast(`${selectedIds.size} ide dihapus`, 'info', true);
-      setSelectedIds(new Set());
-    }
+    if (selectedIds.size === 0) return;
+    setShowBatchDeleteConfirm(true);
+  };
+
+  const handleExecuteBatchDelete = () => {
+    const count = selectedIds.size;
+    selectedIds.forEach((id) => {
+      studioStore.deleteItem(id);
+    });
+    showToast(`${count} ide berhasil dihapus`, 'info', true);
+    setSelectedIds(new Set());
+    setShowBatchDeleteConfirm(false);
   };
 
   const startInlineEdit = (idea: ContentItem) => {
@@ -582,6 +595,30 @@ export function IdeaBankModule({
           })
         )}
       </div>
+
+      {/* Individual Idea Delete Modal */}
+      <ConfirmDialogModal
+        isOpen={ideaToDelete !== null}
+        title="Hapus Ide?"
+        message={`Apakah Anda yakin ingin menghapus ide "${ideaToDelete?.title || ''}"? Tindakan ini dapat dibatalkan melalui tombol Undo.`}
+        confirmLabel="Ya, Hapus Ide"
+        cancelLabel="Batal"
+        variant="danger"
+        onConfirm={handleExecuteDeleteIdea}
+        onCancel={() => setIdeaToDelete(null)}
+      />
+
+      {/* Batch Idea Delete Modal */}
+      <ConfirmDialogModal
+        isOpen={showBatchDeleteConfirm}
+        title={`Hapus ${selectedIds.size} Ide Terpilih?`}
+        message={`Apakah Anda yakin ingin menghapus ${selectedIds.size} ide yang dipilih? Tindakan ini dapat dibatalkan melalui tombol Undo.`}
+        confirmLabel={`Ya, Hapus ${selectedIds.size} Ide`}
+        cancelLabel="Batal"
+        variant="danger"
+        onConfirm={handleExecuteBatchDelete}
+        onCancel={() => setShowBatchDeleteConfirm(false)}
+      />
     </div>
   );
 }

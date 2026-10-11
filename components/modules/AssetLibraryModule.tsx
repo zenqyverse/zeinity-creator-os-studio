@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { MediaAsset, ContentItem, AssetType } from '../../lib/types';
 import { studioStore } from '../../lib/storage';
 import { useToast } from '../ToastContainer';
+import { ConfirmDialogModal } from '../ConfirmDialogModal';
 import {
   Images,
   Plus,
@@ -31,6 +32,7 @@ export function AssetLibraryModule({
   const { showToast } = useToast();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [assetToDelete, setAssetToDelete] = useState<{ id: string; name: string } | null>(null);
 
   const filteredAssets = assets.filter((a) => {
     const matchSearch =
@@ -42,10 +44,14 @@ export function AssetLibraryModule({
   });
 
   const handleDelete = (id: string, name: string) => {
-    if (confirm(`Hapus metadata aset "${name}"?`)) {
-      studioStore.deleteAsset(id);
-      showToast(`Aset "${name}" dihapus`, 'info');
-    }
+    setAssetToDelete({ id, name });
+  };
+
+  const handleExecuteDeleteAsset = () => {
+    if (!assetToDelete) return;
+    studioStore.deleteAsset(assetToDelete.id);
+    showToast(`Aset "${assetToDelete.name}" dihapus`, 'info');
+    setAssetToDelete(null);
   };
 
   const isImage = (asset: MediaAsset) => {
@@ -297,6 +303,17 @@ export function AssetLibraryModule({
           })
         )}
       </div>
+
+      <ConfirmDialogModal
+        isOpen={assetToDelete !== null}
+        title="Hapus Metadata Aset?"
+        message={`Apakah Anda yakin ingin menghapus metadata aset "${assetToDelete?.name || ''}"?`}
+        confirmLabel="Ya, Hapus"
+        cancelLabel="Batal"
+        variant="danger"
+        onConfirm={handleExecuteDeleteAsset}
+        onCancel={() => setAssetToDelete(null)}
+      />
     </div>
   );
 }

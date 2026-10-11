@@ -5,6 +5,7 @@ import { ResearchSource, ContentItem, VerificationStatus } from '../../lib/types
 import { studioStore } from '../../lib/storage';
 import { generateWithTaskRouter } from '../../lib/ai-service';
 import { useToast } from '../ToastContainer';
+import { ConfirmDialogModal } from '../ConfirmDialogModal';
 import {
   ShieldCheck,
   Plus,
@@ -32,6 +33,7 @@ export function ResearchModule({
   const { showToast } = useToast();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sourceToDelete, setSourceToDelete] = useState<{ id: string; title: string } | null>(null);
 
   const filteredSources = sources.filter((s) => {
     const matchSearch =
@@ -44,10 +46,14 @@ export function ResearchModule({
   });
 
   const handleDelete = (id: string, title: string) => {
-    if (confirm(`Hapus sumber "${title}"?`)) {
-      studioStore.deleteSource(id);
-      showToast(`Sumber "${title}" dihapus`, 'info');
-    }
+    setSourceToDelete({ id, title });
+  };
+
+  const handleExecuteDeleteSource = () => {
+    if (!sourceToDelete) return;
+    studioStore.deleteSource(sourceToDelete.id);
+    showToast(`Sumber "${sourceToDelete.title}" dihapus`, 'info');
+    setSourceToDelete(null);
   };
 
   const handlePushToPayoff = (source: ResearchSource, linkedContent?: ContentItem) => {
@@ -360,6 +366,17 @@ export function ResearchModule({
           })
         )}
       </div>
+
+      <ConfirmDialogModal
+        isOpen={sourceToDelete !== null}
+        title="Hapus Sumber Riset?"
+        message={`Apakah Anda yakin ingin menghapus sumber riset "${sourceToDelete?.title || ''}"?`}
+        confirmLabel="Ya, Hapus"
+        cancelLabel="Batal"
+        variant="danger"
+        onConfirm={handleExecuteDeleteSource}
+        onCancel={() => setSourceToDelete(null)}
+      />
     </div>
   );
 }

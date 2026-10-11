@@ -130,6 +130,7 @@ class StudioStore {
   private telegramConfig: TelegramConfig = {};
   private offlineQueue: OfflineMutation[] = [];
   private isOnline: boolean = true;
+  private deletedIds: Set<string> = new Set();
 
   private listeners: Set<StorageListener> = new Set();
   private autosaveStatus: AutosaveStatus = 'Tersimpan';
@@ -223,8 +224,33 @@ class StudioStore {
         return val ? JSON.parse(val) : null;
       };
 
-      this.contentItems = dedupeArrayById(get('content_items') || [...INITIAL_CONTENT_ITEMS]).map(normalizeContentItem);
-      this.ideas = dedupeArrayById(get('ideas') || [...INITIAL_IDEAS]).map(normalizeContentItem);
+      const hasBeenInitialized = typeof window !== 'undefined' && localStorage.getItem('zeinity_is_initialized') === 'true';
+
+      const rawDeleted = get('deleted_ids');
+      if (Array.isArray(rawDeleted)) {
+        this.deletedIds = new Set(rawDeleted);
+      }
+
+      const rawContent = get('content_items');
+      const rawIdeas = get('ideas');
+
+      if (hasBeenInitialized) {
+        this.contentItems = dedupeArrayById(Array.isArray(rawContent) ? rawContent : []).map(normalizeContentItem);
+        this.ideas = dedupeArrayById(Array.isArray(rawIdeas) ? rawIdeas : []).map(normalizeContentItem);
+      } else {
+        this.contentItems = dedupeArrayById(rawContent || [...INITIAL_CONTENT_ITEMS]).map(normalizeContentItem);
+        this.ideas = dedupeArrayById(rawIdeas || [...INITIAL_IDEAS]).map(normalizeContentItem);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('zeinity_is_initialized', 'true');
+        }
+      }
+
+      // Filter out any IDs recorded in tombstone
+      if (this.deletedIds.size > 0) {
+        this.contentItems = this.contentItems.filter((c) => !this.deletedIds.has(c.id));
+        this.ideas = this.ideas.filter((i) => !this.deletedIds.has(i.id));
+      }
+
       this.sources = dedupeArrayById(get('sources') || [...INITIAL_RESEARCH_SOURCES]);
       this.storyboards = dedupeArrayById(get('storyboards') || [...INITIAL_STORYBOARD_SCENES]);
       this.checklists = dedupeArrayById(get('checklists') || [...INITIAL_CHECKLISTS]);
@@ -409,29 +435,74 @@ class StudioStore {
   }
 
   public deleteItem(id: string): boolean {
+    let deleted = false;
+    let title = '';
+
+    // 1. Remove pending upsert mutations for this item from offline queue
+    this.offlineQueue = this.offlineQueue.filter(
+      (q) => !(q.action === 'upsert' && (q.payload?.id === id || q.recordId === id))
+    );
+    this.saveToLocalStorage('offline_queue', this.offlineQueue);
+
+    // 2. Track deleted ID in tombstone to prevent resurrection from Supabase or reloads
+    this.recordDeletedId(id);
+
+    // 3. Remove from contentItems
     const contentIdx = this.contentItems.findIndex((c) => c.id === id);
     if (contentIdx >= 0) {
       const removed = this.contentItems.splice(contentIdx, 1)[0];
+      title = removed.title;
       this.undoStack.push({ type: 'content_items', payload: removed, action: 'delete' });
       this.saveToLocalStorage('content_items', this.contentItems);
-      this.deleteFromSupabase('content_items', id);
-      this.logActivity(`Menghapus konten: ${removed.title}`);
-      this.notify();
-      return true;
+      deleted = true;
     }
 
+    // 4. Remove from ideas (in case of overlap or conversion)
     const ideaIdx = this.ideas.findIndex((i) => i.id === id);
     if (ideaIdx >= 0) {
       const removed = this.ideas.splice(ideaIdx, 1)[0];
+      if (!title) title = removed.title;
       this.undoStack.push({ type: 'ideas', payload: removed, action: 'delete' });
       this.saveToLocalStorage('ideas', this.ideas);
+      deleted = true;
+    }
+
+    if (deleted) {
+      // 5. Clean linked storyboards, checklists, and script versions
+      this.storyboards = this.storyboards.filter((s) => s.content_id !== id);
+      this.saveToLocalStorage('storyboards', this.storyboards);
+
+      this.checklists = this.checklists.filter((c) => c.content_id !== id);
+      this.saveToLocalStorage('checklists', this.checklists);
+
+      this.scriptVersions = this.scriptVersions.filter((v) => v.content_id !== id);
+      this.saveToLocalStorage('script_versions', this.scriptVersions);
+
+      // 6. Delete from Supabase
       this.deleteFromSupabase('content_items', id);
-      this.logActivity(`Menghapus ide: ${removed.title}`);
+      this.deleteFromSupabase('storyboard_scenes', id);
+      this.deleteFromSupabase('production_checklists', id);
+      this.deleteFromSupabase('script_versions', id);
+
+      this.logActivity(`Menghapus: ${title || id}`);
       this.notify();
       return true;
     }
 
     return false;
+  }
+
+  public recordDeletedId(id: string) {
+    this.deletedIds.add(id);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('zeinity_deleted_ids', JSON.stringify(Array.from(this.deletedIds)));
+      } catch {}
+    }
+  }
+
+  public isDeleted(id: string): boolean {
+    return this.deletedIds.has(id);
   }
 
   public convertIdeaToContent(ideaId: string): ContentItem | null {
@@ -938,10 +1009,20 @@ class StudioStore {
         this.contentItems.unshift(item.payload);
         this.contentItems = dedupeArrayById(this.contentItems);
         this.saveToLocalStorage('content_items', this.contentItems);
+        this.persistToSupabase('content_items', item.payload);
       } else if (item.type === 'ideas') {
         this.ideas.unshift(item.payload);
         this.ideas = dedupeArrayById(this.ideas);
         this.saveToLocalStorage('ideas', this.ideas);
+        this.persistToSupabase('content_items', item.payload);
+      }
+      if (item.payload?.id) {
+        this.deletedIds.delete(item.payload.id);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('zeinity_deleted_ids', JSON.stringify(Array.from(this.deletedIds)));
+          } catch {}
+        }
       }
       this.notify();
       return true;
@@ -1089,6 +1170,9 @@ class StudioStore {
         const localIdeaMap = new Map(this.ideas.map((c, i) => [c.id, { item: c, index: i }]));
 
         for (const rawItem of remoteItems) {
+          if (this.deletedIds.has(rawItem.id)) {
+            continue;
+          }
           const item = normalizeContentItem(rawItem);
           if (item.type === 'idea') {
             const existing = localIdeaMap.get(item.id);

@@ -219,6 +219,7 @@ export default function ZeinityStudioPage() {
 
   const handleCloseStudioModal = () => {
     setIsStudioModalOpen(false);
+    setStudioModalItem(null);
   };
 
   const handleUpdateStudioItem = (updatedItem: ContentItem) => {
@@ -489,6 +490,10 @@ export default function ZeinityStudioPage() {
             initialData={editingItem || {}}
             onSubmit={handleFormSubmitContent}
             onCancel={() => setDrawerType(null)}
+            onDelete={() => {
+              syncFromStore();
+              setDrawerType(null);
+            }}
           />
         )}
 
@@ -498,6 +503,10 @@ export default function ZeinityStudioPage() {
             initialData={editingItem || {}}
             onSubmit={handleFormSubmitContent}
             onCancel={() => setDrawerType(null)}
+            onDelete={() => {
+              syncFromStore();
+              setDrawerType(null);
+            }}
           />
         )}
 
@@ -507,6 +516,10 @@ export default function ZeinityStudioPage() {
             contentItems={contentItems}
             onSubmit={handleFormSubmitSource}
             onCancel={() => setDrawerType(null)}
+            onDelete={() => {
+              syncFromStore();
+              setDrawerType(null);
+            }}
           />
         )}
 
@@ -516,6 +529,10 @@ export default function ZeinityStudioPage() {
             contentItems={contentItems}
             onSubmit={handleFormSubmitAsset}
             onCancel={() => setDrawerType(null)}
+            onDelete={() => {
+              syncFromStore();
+              setDrawerType(null);
+            }}
           />
         )}
 
@@ -524,6 +541,10 @@ export default function ZeinityStudioPage() {
             initialData={editingItem || {}}
             onSubmit={handleFormSubmitMetric}
             onCancel={() => setDrawerType(null)}
+            onDelete={() => {
+              syncFromStore();
+              setDrawerType(null);
+            }}
           />
         )}
       </DrawerModal>

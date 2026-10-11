@@ -17,6 +17,7 @@ import {
 import { studioStore } from '../lib/storage';
 import { useToast } from './ToastContainer';
 import { TitleValidatorBar } from './TitleValidatorBar';
+import { ConfirmDialogModal } from './ConfirmDialogModal';
 import { WpmMeter } from './WpmMeter';
 import {
   exportCleanNarrationForTts,
@@ -247,6 +248,17 @@ export function UnifiedStudioModal({
     thumbJson: '[]',
     status: 'Ide',
   });
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleExecuteDelete = () => {
+    if (!item?.id) return;
+    const targetTitle = title || item.title || 'Konten';
+    studioStore.deleteItem(item.id);
+    showToast(`Konten "${targetTitle}" berhasil dihapus`, 'info', true);
+    setShowDeleteConfirm(false);
+    onClose();
+  };
 
   // Copy helper
   const handleCopyText = async (text: string, key: string, label: string) => {
@@ -1109,6 +1121,16 @@ export function UnifiedStudioModal({
             <span className="text-[11px] text-zmuted hidden sm:inline-block px-1">
               {autosaveIndicator}
             </span>
+
+            {/* Delete Content Button */}
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="p-2 rounded-xl bg-zpanel-2 hover:bg-rose-500/20 border border-zline text-zmuted hover:text-rose-400 transition-colors"
+              title="Hapus Konten dari Pipeline"
+            >
+              <Trash2 className="w-4 h-4 text-rose-400" />
+            </button>
 
             {/* Manual Save Button */}
             <button
@@ -2167,6 +2189,29 @@ export function UnifiedStudioModal({
                   })}
                 </div>
               </div>
+
+              {/* Danger Zone: Hapus Konten */}
+              <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/20 space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-rose-400 flex items-center gap-1.5">
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Zona Bahaya: Hapus Konten
+                    </h4>
+                    <p className="text-[11px] text-zmuted mt-0.5">
+                      Hapus konten ini beserta seluruh draf naskah, adegan storyboard, dan checklist dari pipeline.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="px-3.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Hapus Konten Ini</span>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -2314,6 +2359,18 @@ export function UnifiedStudioModal({
             </div>
           </div>
         )}
+
+        {/* Resilient Delete Confirmation Modal */}
+        <ConfirmDialogModal
+          isOpen={showDeleteConfirm}
+          title="Hapus Konten dari Pipeline?"
+          message={`Apakah Anda yakin ingin menghapus konten "${title || item?.title || ''}"? Seluruh draf naskah, storyboard, dan checklist akan dihapus dari pipeline. Anda dapat membatalkannya melalui tombol Undo.`}
+          confirmLabel="Ya, Hapus Konten"
+          cancelLabel="Batal"
+          variant="danger"
+          onConfirm={handleExecuteDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
       </div>
     </div>
   );

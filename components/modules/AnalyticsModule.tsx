@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { AnalyticsMetric, ContentItem, Pillar, VideoFormat } from '../../lib/types';
 import { studioStore } from '../../lib/storage';
 import { useToast } from '../ToastContainer';
+import { ConfirmDialogModal } from '../ConfirmDialogModal';
 import { generateWithTaskRouter } from '../../lib/ai-service';
 import {
   TrendingUp,
@@ -17,6 +18,7 @@ import {
   RefreshCw,
   Search,
   ExternalLink,
+  Trash2,
 } from 'lucide-react';
 
 import { parseYouTubeAnalyticsCsv } from '../../lib/csv-parser';
@@ -48,6 +50,7 @@ export function AnalyticsModule({
   onOpenMetricModal,
 }: AnalyticsModuleProps) {
   const { showToast } = useToast();
+  const [metricToDelete, setMetricToDelete] = useState<AnalyticsMetric | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiInsight, setAiInsight] = useState<string | null>(null);
 
@@ -465,6 +468,7 @@ export function AnalyticsModule({
                 <th className="py-3 px-3 font-bold">APV % (90-110%)</th>
                 <th className="py-3 px-4 font-bold">Hipotesis & Hasil Eksperimen</th>
                 <th className="py-3 px-3 font-bold">Langkah Berikutnya</th>
+                <th className="py-3 px-3 font-bold text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zline/40">
@@ -556,6 +560,27 @@ export function AnalyticsModule({
                     <td className="py-3.5 px-3 max-w-xs text-[11px] text-emerald-300 font-medium">
                       {m.experiment_next || 'Lanjutkan pemantauan'}
                     </td>
+
+                    {/* Actions */}
+                    <td className="py-3.5 px-3 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1">
+                        {onOpenMetricModal && (
+                          <button
+                            onClick={() => onOpenMetricModal(m)}
+                            className="px-2 py-1 rounded bg-zpanel-2 hover:bg-zline/60 border border-zline text-[11px] font-semibold text-zink transition-colors"
+                          >
+                            Edit
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setMetricToDelete(m)}
+                          className="p-1 rounded text-zmuted hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          title="Hapus metrik"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -563,6 +588,23 @@ export function AnalyticsModule({
           </table>
         </div>
       </div>
+
+      <ConfirmDialogModal
+        isOpen={metricToDelete !== null}
+        title="Hapus Metrik Video?"
+        message={`Apakah Anda yakin ingin menghapus data analitik untuk video "${metricToDelete?.title || ''}"?`}
+        confirmLabel="Ya, Hapus"
+        cancelLabel="Batal"
+        variant="danger"
+        onConfirm={() => {
+          if (metricToDelete) {
+            studioStore.deleteMetric(metricToDelete.id);
+            showToast(`Metrik "${metricToDelete.title}" dihapus`, 'info');
+            setMetricToDelete(null);
+          }
+        }}
+        onCancel={() => setMetricToDelete(null)}
+      />
     </div>
   );
 }

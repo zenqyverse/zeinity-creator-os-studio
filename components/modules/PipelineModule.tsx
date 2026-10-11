@@ -6,6 +6,7 @@ import { studioStore } from '../../lib/storage';
 import { useToast } from '../ToastContainer';
 import { scrollToStudioTop } from '../../lib/scroll-utils';
 import { exportCleanNarrationForTts } from '../../lib/export-utils';
+import { ConfirmDialogModal } from '../ConfirmDialogModal';
 import {
   LayoutList,
   Columns3,
@@ -75,6 +76,7 @@ export function PipelineModule({
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<EditorialStatus | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<ContentItem | null>(null);
 
   // Close dropdown menu on outside click or Escape key
   useEffect(() => {
@@ -241,10 +243,15 @@ export function PipelineModule({
   };
 
   const handleDelete = (item: ContentItem) => {
-    if (confirm(`Hapus "${item.title}" dari pipeline?`)) {
-      studioStore.deleteItem(item.id);
-      showToast(`Konten "${item.title}" dihapus`, 'info', true);
-    }
+    setItemToDelete(item);
+  };
+
+  const handleExecuteDelete = () => {
+    if (!itemToDelete) return;
+    const targetTitle = itemToDelete.title;
+    studioStore.deleteItem(itemToDelete.id);
+    showToast(`Konten "${targetTitle}" berhasil dihapus`, 'info', true);
+    setItemToDelete(null);
   };
 
   return (
@@ -877,17 +884,31 @@ export function PipelineModule({
                             >
                               <Clapperboard className="w-3 h-3 text-zcyan" /> Studio 🎬
                             </button>
-                            {stage !== 'Terbit' && (
+                            <div className="flex items-center gap-1.5">
                               <button
+                                type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleAdvanceStatus(item);
+                                  if (isDraggingRef.current) return;
+                                  handleDelete(item);
                                 }}
-                                className="font-bold text-zcyan hover:underline flex items-center gap-0.5"
+                                className="p-1 rounded text-zmuted hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                                title="Hapus Konten"
                               >
-                                Maju <ArrowRight className="w-3 h-3" />
+                                <Trash2 className="w-3 h-3" />
                               </button>
-                            )}
+                              {stage !== 'Terbit' && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAdvanceStatus(item);
+                                  }}
+                                  className="font-bold text-zcyan hover:underline flex items-center gap-0.5"
+                                >
+                                  Maju <ArrowRight className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))
@@ -899,6 +920,18 @@ export function PipelineModule({
           </div>
         </div>
       )}
+
+      {/* Resilient Delete Confirmation Modal */}
+      <ConfirmDialogModal
+        isOpen={itemToDelete !== null}
+        title="Hapus Konten dari Pipeline?"
+        message={`Apakah Anda yakin ingin menghapus "${itemToDelete?.title || ''}"? Seluruh draf naskah dan pengaturan terkait akan dihapus dari pipeline. Anda dapat membatalkannya melalui tombol Undo.`}
+        confirmLabel="Ya, Hapus Konten"
+        cancelLabel="Batal"
+        variant="danger"
+        onConfirm={handleExecuteDelete}
+        onCancel={() => setItemToDelete(null)}
+      />
     </div>
   );
 }
