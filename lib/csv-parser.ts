@@ -1,4 +1,4 @@
-import { AnalyticsMetric, Pillar, VideoFormat } from './types';
+import { AnalyticsMetric, ContentTier, Pillar, VideoFormat } from './types';
 
 /**
  * Parses time formats such as "0:44", "00:00:44", "1:15", "44", "44.5s" into seconds (numeric).
@@ -67,12 +67,22 @@ function inferPillar(title: string): Pillar {
 }
 
 /**
- * Intelligent Format detection from duration.
+ * Intelligent Format detection from duration across 11 formats.
  */
 function inferFormat(durationSeconds: number): VideoFormat {
-  if (durationSeconds > 0 && durationSeconds <= 30) return 'Flash News';
-  if (durationSeconds > 45 && durationSeconds <= 60) return 'Actionable Tip';
-  return 'Quick Breakdown';
+  if (durationSeconds <= 60) {
+    if (durationSeconds > 0 && durationSeconds <= 30) return 'Flash News';
+    if (durationSeconds > 45 && durationSeconds <= 60) return 'Actionable Tip';
+    return 'Quick Breakdown';
+  } else if (durationSeconds <= 300) {
+    if (durationSeconds <= 120) return 'Deep Explainer';
+    if (durationSeconds <= 200) return 'Mini Tutorial';
+    return 'Case Breakdown';
+  } else {
+    if (durationSeconds <= 420) return 'Video Essay';
+    if (durationSeconds <= 540) return 'Masterclass';
+    return 'Case Investigation';
+  }
 }
 
 /**
@@ -146,6 +156,14 @@ export function parseYouTubeAnalyticsCsv(csvText: string): Partial<AnalyticsMetr
   const likesIdx = findIndex(['likes', 'suka', 'jumlahsuka']);
   const subsIdx = findIndex(['subscribers', 'pelanggan', 'subscribersgained']);
   const dateIdx = findIndex(['videopublishtime', 'waktupublikasi', 'publishdate', 'date', 'tanggal']);
+  const ctrIdx = findIndex([
+    'rasiokliktayangtayangan',
+    'clickthroughrate',
+    'ctr',
+    'thumbnailctr',
+    'rasiokliktayang',
+    'impressionsctr',
+  ]);
 
   const results: Partial<AnalyticsMetric>[] = [];
 
@@ -170,14 +188,19 @@ export function parseYouTubeAnalyticsCsv(csvText: string): Partial<AnalyticsMetr
     const likes = likesIdx >= 0 ? parseInt(row[likesIdx]?.replace(/[^0-9]/g, '') || '0', 10) : Math.round(views * 0.06);
     const subs = subsIdx >= 0 ? parseInt(row[subsIdx]?.replace(/[^0-9]/g, '') || '0', 10) : Math.round(views * 0.005);
     const recordedAt = dateIdx >= 0 && row[dateIdx] ? row[dateIdx] : new Date().toISOString();
+    const thumbnailCtr = ctrIdx >= 0 && row[ctrIdx] ? parsePercentage(row[ctrIdx]) : undefined;
 
     const pillar = inferPillar(title);
     const format = inferFormat(avgDur);
+    const contentTier: ContentTier = avgDur <= 60 ? 'Shorts' : avgDur <= 300 ? 'Mid-Form' : 'Long-Form';
+    const trafficSource = avgDur > 60 ? 'YouTube Browse / Search' : 'Shorts Feed (Diimpor CSV)';
 
     results.push({
       title,
       pillar,
       format,
+      content_tier: contentTier,
+      thumbnail_ctr: thumbnailCtr,
       views,
       shown_in_feed: feed,
       stayed_to_watch: stayed,
@@ -185,7 +208,7 @@ export function parseYouTubeAnalyticsCsv(csvText: string): Partial<AnalyticsMetr
       apv,
       likes,
       subscribers: subs,
-      traffic_source: 'Shorts Feed (Diimpor CSV)',
+      traffic_source: trafficSource,
       experiment_hypothesis: `Diimpor dari data riil YouTube Studio Analytics (${title})`,
       recorded_at: recordedAt,
     });

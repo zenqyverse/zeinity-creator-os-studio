@@ -72,7 +72,16 @@ Pusat eksekusi konten layar lebar (`w-[95vw] max-w-7xl h-[90vh]`) yang menginteg
 * **Aturan Mutlak**: Panjang judul wajib **5–10 kata** (mencegah judul terpotong di antarmuka perangkat mobile YouTube).
 * **Aturan Rekomendasi**: Kata tanya (*Apa/Apakah/Kenapa/Bagaimana*) dan tanda tanya (*?*) kini berstatus sebagai **rekomendasi ramah**, tidak lagi memblokir status kelulusan judul.
 
-### 4. Perampingan Navigasi Sidebar (9 Hub Inti)
+### 4. CapCut Multi-Format & Chapter Export
+* **Ekspor CapCut Draft JSON**: Mendukung resolusi 9:16 (`1080x1920`) dan 16:9 (`1920x1080`), penempatan audio track, serta pembuatan teks subtitle SRT otomatis.
+* **Auto-Chapter Marker**: Menyisipkan metadata bab (`script_chapters`) langsung ke dalam timeline CapCut untuk video Mid-Form dan Long-Form.
+
+### 5. Analytics & Learning Lab (Dual-Benchmark)
+* **Dual Benchmark Target**: Otomatis mengevaluasi performa video berdasarkan tier (Shorts: Target Retensi >70%, APVD >30s, Swipe Away <30% vs Long-Form: Target Retensi >45%, APVD >180s, CTR >8.0%).
+* **11-Format Breakdown**: Analisis komparatif retensi dan rasio performa di seluruh 11 format terverifikasi.
+* **CSV Analytics Ingestion**: Impor file ekspor metrik YouTube Studio dengan ekstraksi otomatis durasi ke tier dan rasio klik tayang (CTR).
+
+### 6. Perampingan Navigasi Sidebar (9 Hub Inti)
 Menu *Script Studio* dan *Production Studio* telah dilebur ke dalam Modal Terpadu di Pipeline, merampingkan sidebar menjadi 9 hub:
 1. `Overview` (Command Center & Daily Focus)
 2. `Content Pipeline` (Pusat Kendali Proyek Multi-Format)
@@ -84,13 +93,13 @@ Menu *Script Studio* dan *Production Studio* telah dilebur ke dalam Modal Terpad
 8. `Analytics & Learning` (Evaluasi Metrik & Benchmark Retensi)
 9. `Settings & Integrations Hub` (Supabase Cloud, YouTube API, Telegram Bot Gateway, AI BYOK, RSS Feeds)
 
-### 5. Telegram Bot Ingestion Gateway (Chat-to-Studio Ingestion)
+### 7. Telegram Bot Ingestion Gateway (Chat-to-Studio Ingestion)
 * **Kirim Ide Instan dari HP**: Kirimkan teks ide, tautan berita/changelog, atau screenshot langsung dari Telegram untuk masuk ke **Inbox Ide Mentah**.
 * **Manajemen Pengaturan Terpusat di UI**: Tab khusus **Telegram Bot** di Hub Pengaturan untuk memasukkan Bot Token, Owner Chat ID (whitelist pengaman anti-spam), dan pendaftaran Webhook 1-Klik (`setWebhook`).
 * **Inspeksi Status Live**: Cek status webhook aktif, jumlah pembaruan tertunda (*pending updates*), dan uji koneksi bot instan (`getMe`).
 * **Sinkronisasi Otomatis & Tombol Manual**: Antrean server menyimpan ide masuk dan otomatis mengalirkannya ke browser studio saat Bank Ide dibuka, lengkap dengan tombol *"Sinkronkan Ide Masuk"*.
 
-### 6. macOS Live Diagnostic Terminal Dock (`Ctrl + \``)
+### 8. macOS Live Diagnostic Terminal Dock (`Ctrl + \``)
 * Terminal mengambang bergaya macOS untuk inspeksi kesehatan sistem real-time.
 * **Humanized Root-Cause Parser**: Menjelaskan error dalam Bahasa Indonesia (apa yang terjadi, akar masalah, dan solusi konkret).
 
@@ -148,7 +157,12 @@ TELEGRAM_OWNER_CHAT_ID=
 ZEINITY_INGEST_SECRET=super-secret-token
 ```
 
-### 4. Jalankan Server Pengembangan
+### 4. Migrasi Basis Data Supabase (Opsional)
+Jika menghubungkan ke Supabase, jalankan berkas migrasi SQL secara berurutan di Supabase SQL Editor:
+1. `supabase/migrations/001_initial_schema.sql` — Skema fondasi tabel studio, pipeline, ide, dan analitik.
+2. `supabase/migrations/002_multi_format_expansion.sql` — Ekspansi multi-tier (`content_tier`), `thumbnail_ctr`, relaksasi format constraint, dan 11 format terverifikasi.
+
+### 5. Jalankan Server Pengembangan
 ```bash
 npm run dev
 ```

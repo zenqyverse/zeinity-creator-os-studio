@@ -109,10 +109,61 @@ export function exportToCapCutSegments(item: ContentItem): string {
     item.script_payoff || '',
     item.script_ending || '',
     item.format,
-    item.target_wpm || 145
+    item.target_wpm || 145,
+    item.content_tier
   );
 
-  const totalDur = Math.min(60, Math.max(econ.formatTargetSeconds.min, Math.round(econ.estimatedSeconds || 50)));
+  const is169 = item.aspect_ratio === '16:9' || item.content_tier === 'Long-Form' || item.content_tier === 'long';
+  const aspectRatio = is169 ? '16:9' : (item.aspect_ratio || '9:16');
+  const resolution = is169 ? '1920x1080' : '1080x1920';
+
+  if (Array.isArray(item.script_chapters) && item.script_chapters.length > 0) {
+    const totalDur = Math.round(econ.estimatedSeconds || item.script_chapters.length * 60);
+    let runningSec = 0;
+    const avgDur = Math.max(15, Math.round(totalDur / item.script_chapters.length));
+
+    const segments = item.script_chapters.map((ch, idx) => {
+      const tIn = runningSec;
+      const tOut = idx === item.script_chapters!.length - 1 ? totalDur : tIn + avgDur;
+      runningSec = tOut;
+
+      return {
+        index: ch.chapter_number || idx + 1,
+        stage: `Bab ${ch.chapter_number || idx + 1}: ${ch.title}`,
+        time_in: formatTimecode(tIn),
+        time_out: formatTimecode(tOut),
+        narration: ch.content || '',
+        overlay_title: ch.title,
+        visual_note: is169
+          ? '16:9 Landscape chapter card / B-roll footage & key takeaways graphic'
+          : 'On-screen bold text in center 60% safe zone, UI demo zoom',
+        safe_zone_restricted: is169 ? ['Bottom 15% (Subtitles)'] : ['Top 15%', 'Bottom 25%'],
+      };
+    });
+
+    return JSON.stringify(
+      {
+        project_title: item.title,
+        aspect_ratio: aspectRatio,
+        target_resolution: resolution,
+        fps: 60,
+        total_duration_seconds: totalDur,
+        segments,
+      },
+      null,
+      2
+    );
+  }
+
+  const isMidOrLong =
+    item.content_tier === 'Long-Form' ||
+    item.content_tier === 'long' ||
+    item.content_tier === 'Mid-Form' ||
+    item.content_tier === 'mid';
+  const totalDur = isMidOrLong
+    ? Math.round(econ.estimatedSeconds || 300)
+    : Math.min(60, Math.max(econ.formatTargetSeconds.min, Math.round(econ.estimatedSeconds || 50)));
+
   const s1End = Math.min(3, Math.max(2, Math.round(totalDur * 0.08)));
   const s2End = Math.min(10, Math.max(s1End + 2, Math.round(totalDur * 0.22)));
   const s3End = Math.min(Math.max(s2End + 5, totalDur - 5), Math.round(totalDur * 0.85));
@@ -121,8 +172,8 @@ export function exportToCapCutSegments(item: ContentItem): string {
   return JSON.stringify(
     {
       project_title: item.title,
-      aspect_ratio: '9:16',
-      target_resolution: '1080x1920',
+      aspect_ratio: aspectRatio,
+      target_resolution: resolution,
       fps: 60,
       total_duration_seconds: totalDur,
       segments: [
@@ -133,8 +184,10 @@ export function exportToCapCutSegments(item: ContentItem): string {
           time_out: formatTimecode(s1End),
           narration: item.script_hook || '',
           overlay_title: item.title,
-          visual_note: 'On-screen bold text in center 60% safe zone, UI demo zoom',
-          safe_zone_restricted: ['Top 15%', 'Bottom 25%'],
+          visual_note: is169
+            ? 'Opening hook headline banner, 16:9 wide visual'
+            : 'On-screen bold text in center 60% safe zone, UI demo zoom',
+          safe_zone_restricted: is169 ? ['Bottom 15% (Subtitles)'] : ['Top 15%', 'Bottom 25%'],
         },
         {
           index: 2,
@@ -144,7 +197,7 @@ export function exportToCapCutSegments(item: ContentItem): string {
           narration: item.script_context || '',
           overlay_title: '',
           visual_note: 'Highlight relevant platform UI / official statement snippet',
-          safe_zone_restricted: ['Top 15%', 'Bottom 25%'],
+          safe_zone_restricted: is169 ? ['Bottom 15% (Subtitles)'] : ['Top 15%', 'Bottom 25%'],
         },
         {
           index: 3,
@@ -154,7 +207,7 @@ export function exportToCapCutSegments(item: ContentItem): string {
           narration: item.script_payoff || '',
           overlay_title: '',
           visual_note: 'B-roll screen recordings, red circle zoom, pan across proof',
-          safe_zone_restricted: ['Top 15%', 'Bottom 25%'],
+          safe_zone_restricted: is169 ? ['Bottom 15% (Subtitles)'] : ['Top 15%', 'Bottom 25%'],
         },
         {
           index: 4,
@@ -163,8 +216,8 @@ export function exportToCapCutSegments(item: ContentItem): string {
           time_out: formatTimecode(s4End),
           narration: item.script_ending || '',
           overlay_title: '',
-          visual_note: 'Clean finish wrapping back to opening sentence for endless replay',
-          safe_zone_restricted: ['Top 15%', 'Bottom 25%'],
+          visual_note: 'Clean finish wrapping back to opening sentence for endless replay or CTA',
+          safe_zone_restricted: is169 ? ['Bottom 15% (Subtitles)'] : ['Top 15%', 'Bottom 25%'],
         },
       ],
     },
@@ -180,10 +233,9 @@ export function exportToSrt(item: ContentItem): string {
     item.script_payoff || '',
     item.script_ending || '',
     item.format,
-    item.target_wpm || 145
+    item.target_wpm || 145,
+    item.content_tier
   );
-
-  const dur = Math.max(30, econ.estimatedSeconds || 50);
 
   // Time formatting helper
   const formatSrtTime = (sec: number) => {
@@ -193,6 +245,30 @@ export function exportToSrt(item: ContentItem): string {
     const ms = Math.floor((sec % 1) * 1000);
     return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
   };
+
+  if (Array.isArray(item.script_chapters) && item.script_chapters.length > 0) {
+    let srt = '';
+    let runningTime = 0;
+    const totalChapters = item.script_chapters.length;
+    const totalDur = Math.round(econ.estimatedSeconds || totalChapters * 60);
+    const avgChapterDur = Math.max(10, Math.round(totalDur / totalChapters));
+
+    item.script_chapters.forEach((ch, idx) => {
+      const startTime = runningTime;
+      const endTime = idx === totalChapters - 1 ? totalDur : startTime + avgChapterDur;
+      runningTime = endTime;
+
+      srt += `${idx + 1}\n${formatSrtTime(startTime)} --> ${formatSrtTime(endTime)}\n[${ch.title}]\n${ch.content || ''}\n\n`;
+    });
+    return srt.trim() + '\n';
+  }
+
+  const isMidOrLong =
+    item.content_tier === 'Long-Form' ||
+    item.content_tier === 'long' ||
+    item.content_tier === 'Mid-Form' ||
+    item.content_tier === 'mid';
+  const dur = isMidOrLong ? Math.max(60, econ.estimatedSeconds || 300) : Math.max(30, econ.estimatedSeconds || 50);
 
   const s1End = Math.min(3, dur * 0.1);
   const s2End = Math.min(10, dur * 0.25);

@@ -99,6 +99,9 @@ const FORMAT_PRESETS: Record<ContentTier, VideoFormat[]> = {
   short: ['Flash News', 'Quick Breakdown', 'Myth Buster', 'Actionable Tip', 'Kustom'],
   mid: ['Deep Explainer', 'Mini Tutorial', 'Case Breakdown', 'Kustom'],
   long: ['Video Essay', 'Masterclass', 'Case Investigation', 'Ecosystem Review', 'Kustom'],
+  'Shorts': ['Flash News', 'Quick Breakdown', 'Myth Buster', 'Actionable Tip', 'Kustom'],
+  'Mid-Form': ['Deep Explainer', 'Mini Tutorial', 'Case Breakdown', 'Kustom'],
+  'Long-Form': ['Video Essay', 'Masterclass', 'Case Investigation', 'Ecosystem Review', 'Kustom'],
 };
 
 function formatDurationSeconds(sec: number): string {
@@ -1838,7 +1841,8 @@ export function UnifiedStudioModal({
 
                     {/* Preview Card Mockup */}
                     <div className="flex justify-center p-4 rounded-xl bg-[#0f0f0f] border border-zline">
-                      {tier === 'short' || feedPreviewMode === 'mobile' ? (
+                      {!(aspectRatio === '16:9' || item?.aspect_ratio === '16:9' || tier === 'long') &&
+                      (tier === 'short' || feedPreviewMode === 'mobile') ? (
                         /* Mobile Shorts Card Mockup */
                         <div className="w-56 h-96 rounded-xl bg-gradient-to-br from-neutral-900 via-neutral-950 to-neutral-900 border border-neutral-800 relative flex flex-col justify-between p-3 overflow-hidden shadow-2xl">
                           {/* Duration Badge */}
@@ -1869,8 +1873,8 @@ export function UnifiedStudioModal({
                           </div>
                         </div>
                       ) : (
-                        /* Desktop Feed Card Mockup */
-                        <div className="w-80 rounded-xl bg-neutral-950 border border-neutral-800 overflow-hidden shadow-2xl space-y-2.5">
+                        /* 16:9 Horizontal Video Player Mockup */
+                        <div className="w-full max-w-sm sm:max-w-md rounded-xl bg-neutral-950 border border-neutral-800 overflow-hidden shadow-2xl space-y-2.5">
                           {/* 16:9 Thumbnail Mockup */}
                           <div className="aspect-video w-full bg-gradient-to-br from-neutral-900 to-neutral-800 relative flex items-center justify-center p-3">
                             <div className="text-center px-3 py-2 bg-black/60 backdrop-blur-sm rounded-lg border border-white/10">
@@ -1881,9 +1885,12 @@ export function UnifiedStudioModal({
                             <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/80 text-[10px] font-bold text-white">
                               {formatTimestampMinutes(economyResult.estimatedSeconds)}
                             </div>
+                            <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/80 text-[9px] font-bold text-zcyan border border-zcyan/30">
+                              16:9 Landscape
+                            </div>
                           </div>
 
-                          {/* Desktop Metadata */}
+                          {/* Video Metadata */}
                           <div className="p-3 pt-0 flex gap-2.5">
                             <span className="w-8 h-8 rounded-full bg-zcyan text-black font-extrabold flex items-center justify-center text-xs shrink-0">
                               Z
@@ -1892,7 +1899,9 @@ export function UnifiedStudioModal({
                               <h3 className="text-xs font-bold text-white line-clamp-2 leading-snug">
                                 {title || 'Judul Video YouTube'}
                               </h3>
-                              <p className="text-[11px] text-neutral-400">Zeinity</p>
+                              <p className="text-[11px] text-neutral-400">
+                                Zeinity • {tier === 'long' ? 'Long-Form' : tier === 'mid' ? 'Mid-Form' : 'Shorts'}
+                              </p>
                               <p className="text-[10px] text-neutral-500">
                                 24 rb x ditonton • 3 jam yang lalu
                               </p>

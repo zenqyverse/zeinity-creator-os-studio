@@ -64,7 +64,7 @@ export function Sidebar({
                 Zeinity Studio
               </span>
               <span className="text-[10px] text-zcyan font-bold tracking-wider uppercase">
-                Creator OS v2.0
+                Creator OS v3.0
               </span>
             </div>
           )}

@@ -46,6 +46,7 @@ export function IdeaBankModule({
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'inbox' | 'backlog'>('inbox');
   const [search, setSearch] = useState('');
+  const [tierFilter, setTierFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [readinessFilter, setReadinessFilter] = useState<string>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -55,6 +56,12 @@ export function IdeaBankModule({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editNotes, setEditNotes] = useState('');
+
+  const getIdeaTier = (idea: ContentItem): 'Shorts' | 'Mid-Form' | 'Long-Form' => {
+    if (idea.content_tier === 'Long-Form' || idea.content_tier === 'long') return 'Long-Form';
+    if (idea.content_tier === 'Mid-Form' || idea.content_tier === 'mid') return 'Mid-Form';
+    return 'Shorts';
+  };
 
   // Telegram Bot integration states
   const tgConfig = studioStore.getTelegramConfig();
@@ -119,7 +126,8 @@ export function IdeaBankModule({
       idea.pillar.toLowerCase().includes(search.toLowerCase());
     const matchPriority = priorityFilter === 'all' || idea.priority === priorityFilter;
     const matchReadiness = readinessFilter === 'all' || idea.visual_readiness === readinessFilter;
-    return matchSearch && matchPriority && matchReadiness;
+    const matchTier = tierFilter === 'all' || getIdeaTier(idea) === tierFilter;
+    return matchSearch && matchPriority && matchReadiness && matchTier;
   });
 
   const handleConvertToContent = (idea: ContentItem) => {
@@ -353,39 +361,56 @@ export function IdeaBankModule({
           </div>
         )}
 
-        {activeTab === 'backlog' && (
-          <div className="flex items-center gap-3 flex-wrap text-xs">
-            {/* Priority Filter */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-zmuted text-[11px]">Prioritas:</span>
-              <select
-                value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value)}
-                className="bg-zpanel-2 border border-zline rounded-lg px-2.5 py-1 text-zink text-xs outline-none"
-              >
-                <option value="all">Semua Prioritas</option>
-                <option value="Tinggi">Tinggi</option>
-                <option value="Sedang">Sedang</option>
-                <option value="Rendah">Rendah</option>
-              </select>
-            </div>
-
-            {/* Visual Readiness Filter */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-zmuted text-[11px]">Visual Readiness:</span>
-              <select
-                value={readinessFilter}
-                onChange={(e) => setReadinessFilter(e.target.value)}
-                className="bg-zpanel-2 border border-zline rounded-lg px-2.5 py-1 text-zink text-xs outline-none"
-              >
-                <option value="all">Semua Kesiapan</option>
-                <option value="Siap">Siap (Ada visual)</option>
-                <option value="Perlu aset">Perlu Aset Tambahan</option>
-                <option value="Belum dicek">Belum Dicek</option>
-              </select>
-            </div>
+        <div className="flex items-center gap-3 flex-wrap text-xs">
+          {/* Tier Filter */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-zmuted text-[11px]">Tier:</span>
+            <select
+              value={tierFilter}
+              onChange={(e) => setTierFilter(e.target.value)}
+              className="bg-zpanel-2 border border-zline rounded-lg px-2.5 py-1 text-zink text-xs outline-none"
+            >
+              <option value="all">Semua Tier</option>
+              <option value="Shorts">Shorts</option>
+              <option value="Mid-Form">Mid-Form</option>
+              <option value="Long-Form">Long-Form</option>
+            </select>
           </div>
-        )}
+
+          {activeTab === 'backlog' && (
+            <>
+              {/* Priority Filter */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-zmuted text-[11px]">Prioritas:</span>
+                <select
+                  value={priorityFilter}
+                  onChange={(e) => setPriorityFilter(e.target.value)}
+                  className="bg-zpanel-2 border border-zline rounded-lg px-2.5 py-1 text-zink text-xs outline-none"
+                >
+                  <option value="all">Semua Prioritas</option>
+                  <option value="Tinggi">Tinggi</option>
+                  <option value="Sedang">Sedang</option>
+                  <option value="Rendah">Rendah</option>
+                </select>
+              </div>
+
+              {/* Visual Readiness Filter */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-zmuted text-[11px]">Visual Readiness:</span>
+                <select
+                  value={readinessFilter}
+                  onChange={(e) => setReadinessFilter(e.target.value)}
+                  className="bg-zpanel-2 border border-zline rounded-lg px-2.5 py-1 text-zink text-xs outline-none"
+                >
+                  <option value="all">Semua Kesiapan</option>
+                  <option value="Siap">Siap (Ada visual)</option>
+                  <option value="Perlu aset">Perlu Aset Tambahan</option>
+                  <option value="Belum dicek">Belum Dicek</option>
+                </select>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Idea Cards Grid */}
@@ -421,7 +446,7 @@ export function IdeaBankModule({
                 <div className="space-y-3">
                   {/* Badges bar */}
                   <div className="flex items-center justify-between gap-2 text-xs flex-wrap">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {activeTab === 'inbox' && (
                         <input
                           type="checkbox"
@@ -431,6 +456,22 @@ export function IdeaBankModule({
                         />
                       )}
                       
+                      {/* Tier Badge */}
+                      {(() => {
+                        const t = getIdeaTier(idea);
+                        const badgeColor =
+                          t === 'Long-Form'
+                            ? 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+                            : t === 'Mid-Form'
+                            ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                            : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30';
+                        return (
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColor}`}>
+                            {t}
+                          </span>
+                        );
+                      })()}
+
                       {activeTab === 'inbox' && idea.source && (
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 border border-blue-500/30 text-blue-400 uppercase tracking-wider">
                           [{idea.source}]

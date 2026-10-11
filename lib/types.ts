@@ -7,7 +7,7 @@ export type Pillar =
   | 'Gaming & Digital Entertainment'
   | 'Modern Life & Human Behavior';
 
-export type ContentTier = 'short' | 'mid' | 'long';
+export type ContentTier = 'short' | 'mid' | 'long' | 'Shorts' | 'Mid-Form' | 'Long-Form';
 export type AspectRatio = '9:16' | '16:9';
 
 export interface ScriptChapter {
@@ -85,6 +85,11 @@ export interface ContentItem {
   script_ending?: string;
   script_chapters?: ScriptChapter[];
   seo_description?: string;
+  seo_keywords?: string[];
+  seo_meta_description?: string;
+  thumbnail_concept?: string;
+  target_audience?: string;
+  monetization_goal?: string;
   seo_tags?: string[];
   pinned_comment_prompt?: string;
   thumbnail_hooks?: string[];
@@ -195,6 +200,8 @@ export interface AnalyticsMetric {
   title: string;
   pillar: Pillar;
   format: VideoFormat;
+  content_tier?: ContentTier;
+  thumbnail_ctr?: number;
   views: number;
   shown_in_feed: number;
   stayed_to_watch: number; // Viewed %

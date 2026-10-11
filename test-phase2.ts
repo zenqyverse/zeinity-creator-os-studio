@@ -18,11 +18,11 @@ function runPhase2Tests() {
   console.assert(!appPageContent.includes('SafeZoneCanvas'), 'Test 1.3 Failed: app/page.tsx imports SafeZoneCanvas');
   console.assert(!appPageContent.includes('TeleprompterModal'), 'Test 1.4 Failed: app/page.tsx imports TeleprompterModal');
 
-  const prodStudioContent = fs.readFileSync(path.join(__dirname, 'components', 'modules', 'ProductionStudioModule.tsx'), 'utf-8');
-  console.assert(!prodStudioContent.includes('SafeZoneCanvas'), 'Test 1.5 Failed: ProductionStudioModule imports SafeZoneCanvas');
+  const prodStudioPath = path.join(__dirname, 'components', 'modules', 'ProductionStudioModule.tsx');
+  console.assert(!fs.existsSync(prodStudioPath), 'Test 1.5 Failed: ProductionStudioModule.tsx still exists!');
 
-  const scriptStudioContent = fs.readFileSync(path.join(__dirname, 'components', 'modules', 'ScriptStudioModule.tsx'), 'utf-8');
-  console.assert(!scriptStudioContent.includes('TeleprompterModal'), 'Test 1.6 Failed: ScriptStudioModule imports TeleprompterModal');
+  const scriptStudioPath = path.join(__dirname, 'components', 'modules', 'ScriptStudioModule.tsx');
+  console.assert(!fs.existsSync(scriptStudioPath), 'Test 1.6 Failed: ScriptStudioModule.tsx still exists!');
   console.log('✓ Obsolete files deleted and imports cleaned.\n');
 
   // TEST 2: Sidebar Streamlining

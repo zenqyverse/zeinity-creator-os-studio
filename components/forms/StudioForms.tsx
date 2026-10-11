@@ -8,6 +8,8 @@ import {
   AnalyticsMetric,
   Pillar,
   VideoFormat,
+  ContentTier,
+  AspectRatio,
   EditorialStatus,
   Priority,
   VisualReadiness,
@@ -72,6 +74,10 @@ export function ContentForm({ initialData = {}, type, onSubmit, onCancel, onDele
   const { showToast } = useToast();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [title, setTitle] = useState(initialData.title || '');
+  const [contentTier, setContentTier] = useState<ContentTier>(initialData.content_tier || 'short');
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>(
+    initialData.aspect_ratio || (initialData.content_tier === 'long' || (initialData.content_tier as string) === 'Long-Form' ? '16:9' : '9:16')
+  );
   const [pillar, setPillar] = useState<Pillar>(initialData.pillar || 'AI & Technology');
   const [format, setFormat] = useState<VideoFormat>(initialData.format || 'Quick Breakdown');
   const [status, setStatus] = useState<EditorialStatus>(initialData.status || (type === 'idea' ? 'Ide' : 'Ide'));
@@ -82,6 +88,15 @@ export function ContentForm({ initialData = {}, type, onSubmit, onCancel, onDele
   const [productionDue, setProductionDue] = useState(initialData.production_due || '');
   const [publishDate, setPublishDate] = useState(initialData.publish_date ? initialData.publish_date.slice(0, 16) : '');
   const [notes, setNotes] = useState(initialData.notes || '');
+
+  const handleTierChange = (newTier: ContentTier) => {
+    setContentTier(newTier);
+    if (newTier === 'long' || (newTier as string) === 'Long-Form') {
+      setAspectRatio('16:9');
+    } else if (newTier === 'short' || (newTier as string) === 'Shorts') {
+      setAspectRatio('9:16');
+    }
+  };
 
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
@@ -111,6 +126,8 @@ export function ContentForm({ initialData = {}, type, onSubmit, onCancel, onDele
       title,
       pillar,
       format,
+      content_tier: contentTier,
+      aspect_ratio: aspectRatio,
       status,
       priority,
       visual_readiness: readiness,
@@ -154,6 +171,34 @@ export function ContentForm({ initialData = {}, type, onSubmit, onCancel, onDele
         )}
       </div>
 
+      {/* Tier & Aspect Ratio */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <label className="font-semibold text-zmuted">Content Tier *</label>
+          <select
+            value={contentTier}
+            onChange={(e) => handleTierChange(e.target.value as ContentTier)}
+            className="w-full px-3 py-2 rounded-xl bg-zpanel-2 border border-zline text-zink outline-none"
+          >
+            <option value="short">Shorts (&lt;60 detik)</option>
+            <option value="mid">Mid-Form (1–3 menit)</option>
+            <option value="long">Long-Form (5–8 menit)</option>
+          </select>
+        </div>
+
+        <div className="space-y-1">
+          <label className="font-semibold text-zmuted">Aspect Ratio *</label>
+          <select
+            value={aspectRatio}
+            onChange={(e) => setAspectRatio(e.target.value as AspectRatio)}
+            className="w-full px-3 py-2 rounded-xl bg-zpanel-2 border border-zline text-zink outline-none"
+          >
+            <option value="9:16">9:16 (Vertikal - Shorts / Mobile)</option>
+            <option value="16:9">16:9 (Horizontal - Desktop / TV)</option>
+          </select>
+        </div>
+      </div>
+
       {/* Pillar & Format */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
@@ -178,10 +223,23 @@ export function ContentForm({ initialData = {}, type, onSubmit, onCancel, onDele
             onChange={(e) => setFormat(e.target.value as VideoFormat)}
             className="w-full px-3 py-2 rounded-xl bg-zpanel-2 border border-zline text-zink outline-none"
           >
-            <option value="Flash News">Flash News (20–30 detik)</option>
-            <option value="Quick Breakdown">Quick Breakdown (30–45 detik)</option>
-            <option value="Actionable Tip">Actionable Tip (45–60 detik)</option>
-            <option value="Myth Buster">Myth Buster (30–45 detik)</option>
+            <optgroup label="Shorts (<60 detik)">
+              <option value="Flash News">Flash News (20–30 detik)</option>
+              <option value="Quick Breakdown">Quick Breakdown (30–45 detik)</option>
+              <option value="Actionable Tip">Actionable Tip (45–60 detik)</option>
+              <option value="Myth Buster">Myth Buster (30–45 detik)</option>
+            </optgroup>
+            <optgroup label="Mid-Form (1–3 menit)">
+              <option value="Deep Explainer">Deep Explainer (1–3 menit)</option>
+              <option value="Mini Tutorial">Mini Tutorial (1–3 menit)</option>
+              <option value="Case Breakdown">Case Breakdown (1–3 menit)</option>
+              <option value="Video Essay">Video Essay (1–3 menit)</option>
+            </optgroup>
+            <optgroup label="Long-Form (5–8 menit)">
+              <option value="Masterclass">Masterclass (5–8 menit)</option>
+              <option value="Case Investigation">Case Investigation (5–8 menit)</option>
+              <option value="Ecosystem Review">Ecosystem Review (5–8 menit)</option>
+            </optgroup>
           </select>
         </div>
       </div>
@@ -256,10 +314,11 @@ export function ContentForm({ initialData = {}, type, onSubmit, onCancel, onDele
               onChange={(e) => setPublishDate(e.target.value)}
               className="w-full px-3 py-2 rounded-xl bg-zpanel-2 border border-zline text-zink outline-none"
             />
-            <div className="flex gap-1.5 mt-1.5">
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
               <button type="button" onClick={() => handlePresetSchedule(1)} className="px-2 py-1 bg-zpanel-2 border border-zline rounded text-[10px] font-bold text-zcyan hover:bg-zline/50">Senin 07:00</button>
               <button type="button" onClick={() => handlePresetSchedule(4)} className="px-2 py-1 bg-zpanel-2 border border-zline rounded text-[10px] font-bold text-zcyan hover:bg-zline/50">Kamis 07:00</button>
               <button type="button" onClick={() => handlePresetSchedule(0)} className="px-2 py-1 bg-zpanel-2 border border-zline rounded text-[10px] font-bold text-zcyan hover:bg-zline/50">Minggu 07:00</button>
+              <button type="button" onClick={() => setPublishDate(getNextDayOfWeek(6, '19:00'))} className="px-2 py-1 bg-purple-500/10 border border-purple-500/30 rounded text-[10px] font-bold text-purple-300 hover:bg-purple-500/20">Sabtu 19:00 WIB (Long-Form Prime Time)</button>
             </div>
           </div>
         </div>
@@ -267,7 +326,7 @@ export function ContentForm({ initialData = {}, type, onSubmit, onCancel, onDele
 
       {/* Hook preview */}
       <div className="space-y-1">
-        <label className="font-semibold text-zmuted">Gagasan Hook Detik 0–3</label>
+        <label className="font-semibold text-zmuted">Hook / Pembuka (0-3s Shorts, 0-15s Mid/Long)</label>
         <textarea
           rows={2}
           value={hook}
@@ -1006,6 +1065,10 @@ export function MetricForm({ initialData = {}, onSubmit, onCancel, onDelete }: M
   const { showToast } = useToast();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [title, setTitle] = useState(initialData.title || '');
+  const [tier, setTier] = useState<ContentTier>(initialData.content_tier || 'short');
+  const [thumbnailCtr, setThumbnailCtr] = useState<number | ''>(
+    initialData.thumbnail_ctr !== undefined ? initialData.thumbnail_ctr : ''
+  );
   const [views, setViews] = useState(initialData.views || 0);
   const [feed, setFeed] = useState(initialData.shown_in_feed || 0);
   const [stayed, setStayed] = useState(initialData.stayed_to_watch || 70.0);
@@ -1020,6 +1083,8 @@ export function MetricForm({ initialData = {}, onSubmit, onCancel, onDelete }: M
     onSubmit({
       ...initialData,
       title,
+      content_tier: tier,
+      thumbnail_ctr: thumbnailCtr !== '' ? Number(thumbnailCtr) : undefined,
       views: Number(views),
       shown_in_feed: Number(feed),
       stayed_to_watch: Number(stayed),
@@ -1043,6 +1108,33 @@ export function MetricForm({ initialData = {}, onSubmit, onCancel, onDelete }: M
           placeholder="Judul video YouTube Shorts..."
           className="w-full px-3.5 py-2.5 rounded-xl bg-zpanel-2 border border-zline text-zink font-bold outline-none focus:border-zcyan"
         />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <label className="font-semibold text-zmuted">Content Tier</label>
+          <select
+            value={tier}
+            onChange={(e) => setTier(e.target.value as ContentTier)}
+            className="w-full px-3 py-2 rounded-xl bg-zpanel-2 border border-zline text-zink outline-none"
+          >
+            <option value="short">Shorts (&lt;60 detik)</option>
+            <option value="mid">Mid-Form (1–3 menit)</option>
+            <option value="long">Long-Form (5–8 menit)</option>
+          </select>
+        </div>
+
+        <div className="space-y-1">
+          <label className="font-semibold text-purple-400">CTR Thumbnail (%)</label>
+          <input
+            type="number"
+            step="0.1"
+            value={thumbnailCtr}
+            onChange={(e) => setThumbnailCtr(e.target.value === '' ? '' : Number(e.target.value))}
+            placeholder="Misal: 6.8% (Target: 5–8%)"
+            className="w-full px-3 py-2 rounded-xl bg-zpanel-2 border border-purple-500/40 text-purple-300 font-bold outline-none"
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

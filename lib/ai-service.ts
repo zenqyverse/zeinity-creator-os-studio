@@ -1,4 +1,4 @@
-import { AiConfig, AiProvider, ContentItem, ResearchSource } from './types';
+import { AiConfig, AiProvider, ContentItem, ContentTier, ResearchSource } from './types';
 import { studioStore } from './storage';
 
 export interface HealthCheckResult {
@@ -109,6 +109,7 @@ export async function generateWithTaskRouter(
     url?: string;
     sources?: ResearchSource[];
     contentItem?: ContentItem;
+    content_tier?: ContentTier;
   },
   onChunk?: (accumulatedText: string) => void
 ): Promise<AiGenerateResult> {
@@ -319,14 +320,45 @@ OPSI JUDUL:
 2. Apa Rahasia Fitur Offline Ini?
 3. Bagaimana Cara Cek Update Terbaru?`;
   } else if (taskType === 'tighten_script') {
-    text = `HOOK: "Cek HP kamu sekarang juga."
+    const rawTier = context.content_tier;
+    const tier = rawTier === 'Long-Form' || rawTier === 'long' ? 'Long-Form' :
+      rawTier === 'Mid-Form' || rawTier === 'mid' ? 'Mid-Form' : 'Shorts';
+
+    if (tier === 'Long-Form') {
+      text = `[BAB 1: HOOK & PENDAHULUAN (0-60s)]
+"Di balik lonjakan adopsi teknologi belakangan ini, ada satu investigasi krusial yang jarang diungkap..."
+
+[BAB 2: LATAR BELAKANG & AKAR PERMASALAHAN (1-4 min)]
+"Untuk memahami akar persoalannya, kita perlu melihat data pergerakan industri dan regulasi lima tahun ke belakang..."
+
+[BAB 3: BEDAH KASUS & STUDI LAPANGAN (5-10 min)]
+"Mari kita bedah arsitektur sistem, simulasi risiko, dan dampak nyata yang dihadapi para pengguna..."
+
+[BAB 4: KESIMPULAN & STRATEGI MITIGASI (11-15 min)]
+"Langkah nyata yang harus diambil adalah memastikan transparansi data dan tata kelola yang teruji sejak awal."`;
+    } else if (tier === 'Mid-Form') {
+      text = `HOOK: "Ada satu alasan kenapa inovasi ini mengubah lanskap industri hanya dalam hitungan bulan."
+CONTEXT: "Mari pelajari latar belakang masalah dan mengapa pendekatan lama sudah tidak lagi memadai."
+PAYOFF: "Inti pembahasannya terletak pada tiga pilar utama efisiensi: automasi proses, verifikasi data, dan kontrol pengguna yang terpusat."
+ENDING: "Simpan panduan ini dan diskusikan di kolom komentar: apa tantangan terbesar yang kamu hadapi?"`;
+    } else {
+      text = `HOOK: "Cek HP kamu sekarang juga."
 CONTEXT: "Fitur baru ini bikin baterai awet."
 PAYOFF: "Buka pengaturan, cari menu privasi, lalu matikan opsi sinkronisasi otomatis."
 ENDING: "Simpan trik ini supaya tidak lupa."`;
+    }
   } else if (taskType === 'generate_titles') {
-    text = `1. Apa Fitur Baru yang Resmi Dirilis?
+    const rawTier = context.content_tier;
+    const isMidOrLong = rawTier === 'Long-Form' || rawTier === 'long' || rawTier === 'Mid-Form' || rawTier === 'mid';
+    if (isMidOrLong) {
+      text = `1. Investigasi Lengkap: Arsitektur di Balik Teknologi Masa Depan
+2. Panduan Menyeluruh Menguasai Ekosistem AI dari Nol
+3. Analisis Mendalam: Mengapa Perubahan Regulasi Ini Menentukan Industri`;
+    } else {
+      text = `1. Apa Fitur Baru yang Resmi Dirilis?
 2. Kenapa Perubahan Ini Menguntungkan Pengguna?
 3. Bagaimana Cara Mengaktifkan Fitur Baru Tersebut?`;
+    }
   } else {
     text = `Evaluasi Retensi & Eksperimen:
 Target Viewed >= 70% dan APV 90–110% tercapai paling konsisten ketika teks overlay pada detik 0-3 diletakkan presisi di area aman tengah (60%) dengan font berbobot tebal dan warna kontras tinggi (kuning/cyan). Hindari menaruh teks di 15% area atas atau 25% area bawah antarmuka Shorts.`;
@@ -349,6 +381,7 @@ export async function evaluateIdeaSuitability(
   viability_score: number;
   ai_recommended_pillar: import('./types').Pillar;
   ai_recommended_format: import('./types').VideoFormat;
+  content_tier: import('./types').ContentTier;
 }> {
   // Simple heuristic fallback offline logic for now
   const text = (title + ' ' + (notes || '')).toLowerCase();
@@ -360,9 +393,43 @@ export async function evaluateIdeaSuitability(
   else if (text.includes('psikologi') || text.includes('perilaku')) pillar = 'Modern Life & Human Behavior';
 
   let format: import('./types').VideoFormat = 'Quick Breakdown';
-  if (text.includes('news') || text.includes('baru') || text.includes('update')) format = 'Flash News';
-  else if (text.includes('tips') || text.includes('cara') || text.includes('tutorial')) format = 'Actionable Tip';
-  else if (text.includes('mitos') || text.includes('fakta') || text.includes('salah')) format = 'Myth Buster';
+  let tier: import('./types').ContentTier = 'Shorts';
+
+  // Evaluate format and tier based on keyword depth
+  if (text.includes('investigasi') || text.includes('skandal') || text.includes('kasus')) {
+    format = 'Case Investigation';
+    tier = 'Long-Form';
+  } else if (text.includes('ekosistem') || text.includes('arsitektur') || text.includes('industri')) {
+    format = 'Ecosystem Review';
+    tier = 'Long-Form';
+  } else if (text.includes('bedah tuntas') || text.includes('panduan lengkap') || text.includes('masterclass') || text.includes('kursus')) {
+    format = 'Masterclass';
+    tier = 'Long-Form';
+  } else if (text.includes('sejarah') || text.includes('esai') || text.includes('video essay') || text.includes('filosofi')) {
+    format = 'Video Essay';
+    tier = 'Mid-Form';
+  } else if (text.includes('analisis') || text.includes('bedah') || text.includes('studi kasus')) {
+    format = 'Case Breakdown';
+    tier = 'Mid-Form';
+  } else if (text.includes('deep') || text.includes('jelaskan') || text.includes('mengapa')) {
+    format = 'Deep Explainer';
+    tier = 'Mid-Form';
+  } else if (text.includes('tutorial') || text.includes('langkah') || text.includes('mini tutorial')) {
+    format = 'Mini Tutorial';
+    tier = 'Mid-Form';
+  } else if (text.includes('news') || text.includes('baru') || text.includes('update') || text.includes('rilis')) {
+    format = 'Flash News';
+    tier = 'Shorts';
+  } else if (text.includes('mitos') || text.includes('fakta') || text.includes('salah') || text.includes('hoaks')) {
+    format = 'Myth Buster';
+    tier = 'Shorts';
+  } else if (text.includes('tips') || text.includes('cara') || text.includes('trik')) {
+    format = 'Actionable Tip';
+    tier = 'Shorts';
+  } else {
+    format = 'Quick Breakdown';
+    tier = 'Shorts';
+  }
 
   const viability_score = Math.floor(Math.random() * 41) + 60; // 60-100 score
 
@@ -370,5 +437,6 @@ export async function evaluateIdeaSuitability(
     viability_score,
     ai_recommended_pillar: pillar,
     ai_recommended_format: format,
+    content_tier: tier,
   };
 }

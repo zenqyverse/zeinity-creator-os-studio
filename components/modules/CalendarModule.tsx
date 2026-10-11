@@ -29,6 +29,8 @@ export function CalendarModule({ contentItems, onOpenContent }: CalendarModulePr
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [weekOffset, setWeekOffset] = useState(0);
 
+  const [tierFilter, setTierFilter] = useState<'All' | 'Shorts' | 'Mid-Form' | 'Long-Form'>('All');
+
   // Dynamic anchor to Monday of current week
   const currentMonday = getMondayOfCurrentWeek();
   const baseDate = new Date(currentMonday);
@@ -43,10 +45,14 @@ export function CalendarModule({ contentItems, onOpenContent }: CalendarModulePr
 
   const todayStr = formatLocalDate(new Date());
 
-  // Helper: check if day is an official publishing slot (Mon, Thu, Sun)
+  // Helper: check if day is an official publishing slot (Mon, Thu, Sun 07:00 WIB & Sat 19:00 WIB)
   const isPublishingSlotDay = (dayIndex: number) => {
-    // 0 = Sunday, 1 = Monday, 4 = Thursday
-    return dayIndex === 0 || dayIndex === 1 || dayIndex === 4;
+    // 0 = Sunday, 1 = Monday, 4 = Thursday, 6 = Saturday
+    return dayIndex === 0 || dayIndex === 1 || dayIndex === 4 || dayIndex === 6;
+  };
+
+  const getSlotTimeForDay = (dayIndex: number) => {
+    return dayIndex === 6 ? '19:00 WIB' : '07:00 WIB';
   };
 
   const getNextPublishingSlot = () => {
@@ -57,10 +63,36 @@ export function CalendarModule({ contentItems, onOpenContent }: CalendarModulePr
       next.setDate(now.getDate() + i);
       const day = next.getDay();
       if (isPublishingSlotDay(day)) {
-        return `${days[day]}, ${next.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} · 07:00 WIB`;
+        const time = getSlotTimeForDay(day);
+        return `${days[day]}, ${next.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} · ${time}`;
       }
     }
     return 'Senin · 07:00 WIB';
+  };
+
+  const getItemTier = (item: ContentItem): 'Shorts' | 'Mid-Form' | 'Long-Form' => {
+    if (item.content_tier === 'Long-Form' || item.content_tier === 'long') return 'Long-Form';
+    if (item.content_tier === 'Mid-Form' || item.content_tier === 'mid') return 'Mid-Form';
+    return 'Shorts';
+  };
+
+  const filteredContentItems = contentItems.filter((item) => {
+    if (tierFilter === 'All') return true;
+    return getItemTier(item) === tierFilter;
+  });
+
+  const renderTierBadge = (itemTier: 'Shorts' | 'Mid-Form' | 'Long-Form') => {
+    const badgeColor =
+      itemTier === 'Long-Form'
+        ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+        : itemTier === 'Mid-Form'
+        ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+        : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
+    return (
+      <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border shrink-0 ${badgeColor}`}>
+        {itemTier}
+      </span>
+    );
   };
 
   return (
@@ -73,11 +105,26 @@ export function CalendarModule({ contentItems, onOpenContent }: CalendarModulePr
           </div>
           <h1 className="text-2xl font-black text-zink mt-1">Kalender Slot Zeinity</h1>
           <p className="text-xs text-zmuted mt-0.5">
-            Jadwal tayang resmi 3x seminggu: <strong>Senin, Kamis, & Minggu pukul 07:00 WIB</strong>. Tenggat produksi dipisahkan tegas dari jadwal tayang.
+            Jadwal tayang resmi 4x seminggu: <strong>Senin, Kamis, & Minggu pukul 07:00 WIB (Shorts)</strong> dan <strong>Sabtu pukul 19:00 WIB (Long-Form)</strong>. Tenggat produksi dipisahkan tegas dari jadwal tayang.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Segmented Tier Filter */}
+          <div className="flex items-center p-1 rounded-xl bg-zpanel-2 border border-zline text-xs font-bold">
+            {(['All', 'Shorts', 'Mid-Form', 'Long-Form'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTierFilter(t)}
+                className={`px-3 py-1.5 rounded-lg transition-colors ${
+                  tierFilter === t ? 'bg-zcyan text-black' : 'text-zmuted hover:text-zink'
+                }`}
+              >
+                {t === 'All' ? 'Semua' : t}
+              </button>
+            ))}
+          </div>
+
           {/* Week / Month view toggle */}
           <div className="flex items-center p-1 rounded-xl bg-zpanel-2 border border-zline text-xs font-bold">
             <button
@@ -145,7 +192,7 @@ export function CalendarModule({ contentItems, onOpenContent }: CalendarModulePr
           const isSlot = isPublishingSlotDay(dayOfWeek);
 
           // Find items scheduled to publish on this date (local date comparison)
-          const publishingItems = contentItems.filter((c) => {
+          const publishingItems = filteredContentItems.filter((c) => {
             if (!c.publish_date) return false;
             try {
               const pubLocal = formatLocalDate(new Date(c.publish_date));
@@ -156,7 +203,7 @@ export function CalendarModule({ contentItems, onOpenContent }: CalendarModulePr
           });
 
           // Find items due for production on this date
-          const dueItems = contentItems.filter(
+          const dueItems = filteredContentItems.filter(
             (c) => c.production_due && c.production_due === dateStr
           );
 
@@ -178,7 +225,7 @@ export function CalendarModule({ contentItems, onOpenContent }: CalendarModulePr
                 </span>
                 {isSlot && (
                   <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-zcyan/20 text-zcyan border border-zcyan/30">
-                    07:00 WIB
+                    {getSlotTimeForDay(dayOfWeek)}
                   </span>
                 )}
               </div>
@@ -188,48 +235,60 @@ export function CalendarModule({ contentItems, onOpenContent }: CalendarModulePr
                 {/* Publishing items */}
                 {publishingItems
                   .filter((item, i, arr) => arr.findIndex((x) => x.id === item.id) === i)
-                  .map((item, pubIdx) => (
-                  <button
-                    key={`pub-${item.id}-${pubIdx}`}
-                    onClick={() => onOpenContent(item)}
-                    className="w-full text-left p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 hover:border-emerald-500 text-[11px] font-semibold text-emerald-300 truncate block transition-colors"
-                    title={`Tayang: ${item.title}`}
-                  >
-                    🚀 {item.title}
-                  </button>
-                ))}
+                  .map((item, pubIdx) => {
+                    const itemTier = getItemTier(item);
+                    return (
+                      <button
+                        key={`pub-${item.id}-${pubIdx}`}
+                        onClick={() => onOpenContent(item)}
+                        className="w-full text-left p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 hover:border-emerald-500 text-[11px] font-semibold text-emerald-300 block transition-colors space-y-1"
+                        title={`Tayang: ${item.title}`}
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="truncate flex-1">🚀 {item.title}</span>
+                          {renderTierBadge(itemTier)}
+                        </div>
+                      </button>
+                    );
+                  })}
 
                 {/* Production due items */}
                 {dueItems
                   .filter((item, i, arr) => arr.findIndex((x) => x.id === item.id) === i)
                   .map((item, dueIdx) => {
-                  const isOverdue = item.production_due! < todayStr && item.status !== 'Terbit';
-                  return (
-                    <button
-                      key={`due-${item.id}-${dueIdx}`}
-                      onClick={() => onOpenContent(item)}
-                      className={`w-full text-left p-1.5 rounded-lg border text-[11px] font-medium truncate block transition-colors ${
-                        isOverdue
-                          ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 hover:border-amber-400'
-                          : 'bg-zpanel-2 border-zline hover:border-zaccent text-zmuted hover:text-zink'
-                      }`}
-                      title={`Tenggat Produksi: ${item.title}`}
-                    >
-                      <Clock className="w-3 h-3 inline mr-1 text-zaccent" />
-                      Due: {item.title}
-                    </button>
-                  );
-                })}
+                    const isOverdue = item.production_due! < todayStr && item.status !== 'Terbit';
+                    const itemTier = getItemTier(item);
+                    return (
+                      <button
+                        key={`due-${item.id}-${dueIdx}`}
+                        onClick={() => onOpenContent(item)}
+                        className={`w-full text-left p-1.5 rounded-lg border text-[11px] font-medium block transition-colors space-y-1 ${
+                          isOverdue
+                            ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 hover:border-amber-400'
+                            : 'bg-zpanel-2 border-zline hover:border-zaccent text-zmuted hover:text-zink'
+                        }`}
+                        title={`Tenggat Produksi: ${item.title}`}
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="truncate flex-1">
+                            <Clock className="w-3 h-3 inline mr-1 text-zaccent" />
+                            Due: {item.title}
+                          </span>
+                          {renderTierBadge(itemTier)}
+                        </div>
+                      </button>
+                    );
+                  })}
 
                 {publishingItems.length === 0 && dueItems.length === 0 && isSlot && (
                   <div className="text-[10px] text-zmuted/60 italic text-center py-4">
-                    Slot terbuka (07:00 WIB)
+                    Slot terbuka ({getSlotTimeForDay(dayOfWeek)})
                   </div>
                 )}
               </div>
 
               <div className="text-[9px] text-zmuted/50 text-right">
-                {isSlot ? 'Official Zeinity Slot' : ''}
+                {isSlot ? (dayOfWeek === 6 ? 'Official Zeinity Long-Form' : 'Official Zeinity Slot') : ''}
               </div>
             </div>
           );

@@ -72,7 +72,7 @@ export function OverviewModule({
                 Pusat Komando Produksi
               </h1>
               <p className="text-xs sm:text-sm text-zmuted mt-1 max-w-xl">
-                Produksi YouTube Shorts berstandar editorial terverifikasi. Ritme rilis: 3 Shorts per minggu (Senin, Kamis, Minggu pukul 07:00 WIB).
+                Produksi konten multi-format berstandar editorial terverifikasi. Ritme rilis: 4 slot per minggu (Senin, Kamis, Minggu 07:00 WIB Shorts & Sabtu 19:00 WIB Long-Form).
               </p>
             </div>
           </div>
@@ -136,8 +136,8 @@ export function OverviewModule({
             <span className="font-semibold uppercase tracking-wider text-[11px]">Ritme Rilis</span>
             <CalendarDays className="w-4 h-4 text-zcyan" />
           </div>
-          <div className="text-3xl font-black text-zink">3 Slot</div>
-          <p className="text-[11px] text-zmuted">Senin, Kamis, Minggu @ 07:00 WIB</p>
+          <div className="text-3xl font-black text-zink">4 Slot</div>
+          <p className="text-[11px] text-zmuted">Senin, Kamis, Minggu 07:00 (Shorts) & Sabtu 19:00 (Long-Form)</p>
         </div>
 
         {/* Content Pipeline */}
